@@ -1,3 +1,4 @@
+const { rpc } = require("./_lib");
 // 申し込み受付：Supabaseに保存 → 確認メール送信（RESEND_API_KEY があるとき）
 const SB_URL = "https://cczerefroeveoobdlhoj.supabase.co/rest/v1/event_applications";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjemVyZWZyb2V2ZW9vYmRsaG9qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4OTg1NjYsImV4cCI6MjEwMzQ3NDU2Nn0.KsQtf2gYD5EOFYB9Jq-uH8pHI1dVIrUH99J0qkUJy54";
@@ -32,7 +33,7 @@ async function checkout(key, { total, name, email, plans, pair, id }) {
   f.append("mode", "payment");
   f.append("locale", "ja");
   f.append("customer_email", email);
-  f.append("success_url", SITE + "/?paid=1#apply");
+  f.append("success_url", SITE + "/?paid=1&session_id={CHECKOUT_SESSION_ID}#apply");
   f.append("cancel_url", SITE + "/?cancel=1#apply");
   f.append("line_items[0][quantity]", "1");
   f.append("line_items[0][price_data][currency]", "jpy");
@@ -74,12 +75,9 @@ module.exports = async (req, res) => {
   if (!name || !EMAIL_RE.test(email) || !plans.length) return res.status(400).json({ error: "input" });
   if (pair && (!pair_name || !EMAIL_RE.test(pair_email))) return res.status(400).json({ error: "pair" });
   const student = !!b.student, pair_student = pair && !!b.pair_student;
-  // 紹介特典：2人以上紹介した人は本人分が無料（ページには書かない）
+  // 紹介特典：支払い済みの人を2人以上紹介した人は本人分が無料（ページには書かない）
   let free = false;
-  try {
-    const rc = await fetch(SB_URL.replace("/event_applications", "/rpc/referral_count"), { method: "POST", headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY, "Content-Type": "application/json" }, body: JSON.stringify({ p_name: name }) });
-    if (rc.ok) free = (await rc.json()) >= 2;
-  } catch {}
+  try { free = (await rpc("adm_paid_referral_count", { p_name: name })) >= 2; } catch {}
   const { total, set } = calc(plans, pair, student, pair_student, free);
 
   // 有料ならStripeの決済画面をつくる（STRIPE_SECRET_KEY があるとき）
