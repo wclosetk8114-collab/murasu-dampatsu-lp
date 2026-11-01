@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /link.html
+
+Sitemap: https://murasu-dampatsu-lp.vercel.app/sitemap.xml
