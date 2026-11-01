@@ -24,7 +24,7 @@ function calc(plans, pair, stu, pstu) {
   const a = person(plans, stu);
   if (!pair) return { total: a, set };
   const b = person(plans, pstu);
-  return { total: Math.max(0, a - 2000) + Math.max(0, b - 2000), set };
+  return { total: Math.max(0, a - 1500) + Math.max(0, b - 1500), set };
 }
 
 async function checkout(key, { total, name, email, plans, pair, id }) {
@@ -93,7 +93,7 @@ module.exports = async (req, res) => {
   let mailed = false;
   if (key) {
     const list = plans.map((p) => `<li>${esc(p)}（${PRICES[p] ? yen(student && HALF.includes(p) ? PRICES[p] / 2 : PRICES[p]) : "無料"}）</li>`).join("");
-    const extra = [set ? "講演会＋懇親会セット" : "", student ? "学生半額" : "", pair_student ? "同伴者 学生半額" : "", pair ? "ペア割（1人2,000円オフ）" : ""].filter(Boolean).join("／");
+    const extra = [set ? "講演会＋懇親会セット" : "", student ? "学生半額" : "", pair_student ? "同伴者 学生半額" : "", pair ? "ペア割（1人1,500円オフ）" : ""].filter(Boolean).join("／");
     const body = `<div style="font-family:sans-serif;line-height:1.9;color:#2a2f3a;max-width:560px">
 <p>${esc(name)} 様</p>
 <p>「2027年をどう生きるか ─ 村主悠真 × つっちー」にお申し込みいただき、ありがとうございます。<br>以下の内容で受け付けました。</p>
