@@ -19,9 +19,9 @@ function person(plans, stu) {
   if (plans.includes("11/27 講演会") && plans.includes("11/27 懇親会")) p -= stu ? 750 : 1500;
   return p;
 }
-function calc(plans, pair, stu, pstu) {
+function calc(plans, pair, stu, pstu, free) {
   const set = plans.includes("11/27 講演会") && plans.includes("11/27 懇親会");
-  const a = person(plans, stu);
+  const a = free ? 0 : person(plans, stu);
   if (!pair) return { total: a, set };
   const b = person(plans, pstu);
   return { total: Math.max(0, a - 1500) + Math.max(0, b - 1500), set };
@@ -74,7 +74,13 @@ module.exports = async (req, res) => {
   if (!name || !EMAIL_RE.test(email) || !plans.length) return res.status(400).json({ error: "input" });
   if (pair && (!pair_name || !EMAIL_RE.test(pair_email))) return res.status(400).json({ error: "pair" });
   const student = !!b.student, pair_student = pair && !!b.pair_student;
-  const { total, set } = calc(plans, pair, student, pair_student);
+  // 紹介特典：2人以上紹介した人は本人分が無料（ページには書かない）
+  let free = false;
+  try {
+    const rc = await fetch(SB_URL.replace("/event_applications", "/rpc/referral_count"), { method: "POST", headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY, "Content-Type": "application/json" }, body: JSON.stringify({ p_name: name }) });
+    if (rc.ok) free = (await rc.json()) >= 2;
+  } catch {}
+  const { total, set } = calc(plans, pair, student, pair_student, free);
 
   // 有料ならStripeの決済画面をつくる（STRIPE_SECRET_KEY があるとき）
   let session = null;
@@ -85,7 +91,7 @@ module.exports = async (req, res) => {
   }
 
   const row = { event_key: "murasu-2026winter", name, email, plans, pair, pair_name: pair_name || null, pair_email: pair_email || null,
-    referrer: referrer || null, ref_code: ref_code || null, message: message || null, total, student, pair_student, stripe_session_id: session ? session.id : null };
+    referrer: referrer || null, ref_code: ref_code || null, message: message || null, total, student, pair_student, free_by_referral: free, stripe_session_id: session ? session.id : null };
   const ins = await fetch(SB_URL, { method: "POST", headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(row) });
   if (!ins.ok) return res.status(500).json({ error: "save" });
 
@@ -93,7 +99,7 @@ module.exports = async (req, res) => {
   let mailed = false;
   if (key) {
     const list = plans.map((p) => `<li>${esc(p)}（${PRICES[p] ? yen(student && HALF.includes(p) ? PRICES[p] / 2 : PRICES[p]) : "無料"}）</li>`).join("");
-    const extra = [set ? "講演会＋懇親会セット" : "", student ? "学生半額" : "", pair_student ? "同伴者 学生半額" : "", pair ? "ペア割（1人1,500円オフ）" : ""].filter(Boolean).join("／");
+    const extra = [free ? "紹介特典（ご本人分 無料）" : "", set ? "講演会＋懇親会セット" : "", student ? "学生半額" : "", pair_student ? "同伴者 学生半額" : "", pair ? "ペア割（1人1,500円オフ）" : ""].filter(Boolean).join("／");
     const body = `<div style="font-family:sans-serif;line-height:1.9;color:#2a2f3a;max-width:560px">
 <p>${esc(name)} 様</p>
 <p>「2027年をどう生きるか ─ 村主悠真 × つっちー」にお申し込みいただき、ありがとうございます。<br>以下の内容で受け付けました。</p>
