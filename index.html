@@ -288,7 +288,7 @@ footer{text-align:center;font-size:12px;color:var(--mu);padding:36px 0 56px;back
   <h2>よくある質問</h2>
   <details><summary>虚次元のことを何も知らなくても大丈夫？</summary><p>大丈夫です。11/4のオンライン対談は、はじめての方向けの内容です。</p></details>
   <details><summary>1回だけの参加もできますか？</summary><p>できます。どの回からでも参加できます。</p></details>
-  <details><summary>ペア割はどう使いますか？</summary><p>申し込みフォームで「ペアで申し込む」にチェックを入れ、一緒に参加する方のお名前を書いてください。2人分の合計から2,000円オフになります。</p></details>
+  <details><summary>ペア割はどう使いますか？</summary><p>申し込みフォームで「ペアで申し込む」にチェックを入れ、一緒に参加する方のお名前とメールアドレスを書いてください。2人分の合計から2,000円オフになります。</p></details>
   <details><summary>会場はどこですか？</summary><p>11/27は都内の会場です。詳しい場所は、お申し込みの方にメールでお知らせします。</p></details>
   <details><summary>申し込み後の流れは？</summary><p>このページの申し込みフォームから送ると、詳細と参加方法・お支払い方法をメールでお送りします。</p></details>
  </div>
@@ -309,7 +309,7 @@ footer{text-align:center;font-size:12px;color:var(--mu);padding:36px 0 56px;back
     <label class="ck"><input type="checkbox" name="plan" value="12/21 虚点" data-p="11000">12/21（月）虚点<span>11,000円（飲み放題）</span></label>
    </fieldset>
    <label class="ck pairck"><input type="checkbox" name="pair" id="pair">ペアで申し込む（2人で2,000円オフ）</label>
-   <label id="pairname" hidden>一緒に参加する方のお名前<input name="pair_name" maxlength="100"></label>
+   <div id="pairname" hidden><label>一緒に参加する方のお名前<em>必須</em><input name="pair_name" maxlength="100"></label><label>一緒に参加する方のメールアドレス<em>必須</em><input name="pair_email" type="email" maxlength="200"></label></div>
    <label>メッセージ（任意）<textarea name="message" rows="3" maxlength="1000"></textarea></label>
    <div class="total">合計 <b id="sum">0</b> 円<small id="sumnote"></small></div>
    <p class="err" id="err"></p>
@@ -345,9 +345,11 @@ f.addEventListener('submit',function(e){
  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){err.textContent='メールアドレスを正しく入力してください';return}
  if(!plans.length){err.textContent='参加する回を1つ以上選んでください';return}
  if(pair.checked&&!(d.get('pair_name')||'').trim()){err.textContent='一緒に参加する方のお名前を入力してください';return}
+ var pe=(d.get('pair_email')||'').trim();
+ if(pair.checked&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(pe)){err.textContent='一緒に参加する方のメールアドレスを正しく入力してください';return}
  err.textContent='';var b=document.getElementById('sb');b.disabled=true;b.textContent='送信中…';
  fetch(SB,{method:'POST',headers:{'apikey':K,'Authorization':'Bearer '+K,'Content-Type':'application/json','Prefer':'return=minimal'},
-  body:JSON.stringify({event_key:'murasu-2026winter',name:name,email:email,plans:plans,pair:pair.checked,pair_name:(d.get('pair_name')||'').trim()||null,message:(d.get('message')||'').trim()||null})})
+  body:JSON.stringify({event_key:'murasu-2026winter',name:name,email:email,plans:plans,pair:pair.checked,pair_name:pair.checked?(d.get('pair_name')||'').trim():null,pair_email:pair.checked?pe:null,message:(d.get('message')||'').trim()||null})})
  .then(function(r){if(!r.ok)throw 0;f.hidden=true;document.getElementById('done').hidden=false;document.getElementById('apply').scrollIntoView({behavior:'smooth'})})
  .catch(function(){err.textContent='送信できませんでした。時間をおいてもう一度お試しください。';b.disabled=false;b.textContent='この内容で申し込む'});
 });
