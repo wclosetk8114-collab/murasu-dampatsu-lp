@@ -13,12 +13,41 @@ const s = (v, n) => (typeof v === "string" ? v.trim().slice(0, n) : "");
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const yen = (n) => n.toLocaleString("ja-JP") + "円";
 
-function calc(plans, pair) {
-  let p = plans.reduce((a, k) => a + (PRICES[k] || 0), 0);
+const HALF = ["11/27 講演会", "11/27 懇親会"];
+function person(plans, stu) {
+  let p = plans.reduce((a, k) => a + (stu && HALF.includes(k) ? PRICES[k] / 2 : PRICES[k] || 0), 0);
+  if (plans.includes("11/27 講演会") && plans.includes("11/27 懇親会")) p -= stu ? 750 : 1500;
+  return p;
+}
+function calc(plans, pair, stu, pstu) {
   const set = plans.includes("11/27 講演会") && plans.includes("11/27 懇親会");
-  if (set) p -= 1500;
-  if (pair && p > 0) p = p * 2 - 2000;
-  return { total: p, set };
+  const a = person(plans, stu);
+  if (!pair) return { total: a, set };
+  const b = person(plans, pstu);
+  return { total: Math.max(0, a - 2000) + Math.max(0, b - 2000), set };
+}
+
+async function checkout(key, { total, name, email, plans, pair, id }) {
+  const f = new URLSearchParams();
+  f.append("mode", "payment");
+  f.append("locale", "ja");
+  f.append("customer_email", email);
+  f.append("success_url", SITE + "/?paid=1#apply");
+  f.append("cancel_url", SITE + "/?cancel=1#apply");
+  f.append("line_items[0][quantity]", "1");
+  f.append("line_items[0][price_data][currency]", "jpy");
+  f.append("line_items[0][price_data][unit_amount]", String(total));
+  f.append("line_items[0][price_data][product_data][name]", "2027年をどう生きるか ─ 村主悠真×つっちー" + (pair ? "（2名）" : ""));
+  f.append("line_items[0][price_data][product_data][description]", plans.join(" / "));
+  f.append("metadata[name]", name);
+  f.append("metadata[plans]", plans.join(" / "));
+  f.append("metadata[pair]", pair ? "yes" : "no");
+  f.append("metadata[app_ref]", id);
+  const r = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+    method: "POST", headers: { Authorization: "Bearer " + key, "Content-Type": "application/x-www-form-urlencoded" }, body: f.toString(),
+  });
+  if (!r.ok) return null;
+  return r.json();
 }
 
 async function sendMail(key, to, subject, html, bcc) {
@@ -44,18 +73,27 @@ module.exports = async (req, res) => {
   const message = s(b.message, 1000);
   if (!name || !EMAIL_RE.test(email) || !plans.length) return res.status(400).json({ error: "input" });
   if (pair && (!pair_name || !EMAIL_RE.test(pair_email))) return res.status(400).json({ error: "pair" });
-  const { total, set } = calc(plans, pair);
+  const student = !!b.student, pair_student = pair && !!b.pair_student;
+  const { total, set } = calc(plans, pair, student, pair_student);
+
+  // 有料ならStripeの決済画面をつくる（STRIPE_SECRET_KEY があるとき）
+  let session = null;
+  const skey = process.env.STRIPE_SECRET_KEY;
+  if (skey && total > 0) {
+    session = await checkout(skey, { total, name, email, plans, pair, id: Date.now().toString(36) });
+    if (!session) return res.status(502).json({ error: "stripe" });
+  }
 
   const row = { event_key: "murasu-2026winter", name, email, plans, pair, pair_name: pair_name || null, pair_email: pair_email || null,
-    referrer: referrer || null, ref_code: ref_code || null, message: message || null, total };
+    referrer: referrer || null, ref_code: ref_code || null, message: message || null, total, student, pair_student, stripe_session_id: session ? session.id : null };
   const ins = await fetch(SB_URL, { method: "POST", headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(row) });
   if (!ins.ok) return res.status(500).json({ error: "save" });
 
   const key = process.env.RESEND_API_KEY;
   let mailed = false;
   if (key) {
-    const list = plans.map((p) => `<li>${esc(p)}（${PRICES[p] ? yen(PRICES[p]) : "無料"}）</li>`).join("");
-    const extra = [set ? "講演会＋懇親会セット（1,500円おトク）" : "", pair ? "ペア割（2人分の合計から2,000円オフ）" : ""].filter(Boolean).join("／");
+    const list = plans.map((p) => `<li>${esc(p)}（${PRICES[p] ? yen(student && HALF.includes(p) ? PRICES[p] / 2 : PRICES[p]) : "無料"}）</li>`).join("");
+    const extra = [set ? "講演会＋懇親会セット" : "", student ? "学生半額" : "", pair_student ? "同伴者 学生半額" : "", pair ? "ペア割（1人2,000円オフ）" : ""].filter(Boolean).join("／");
     const body = `<div style="font-family:sans-serif;line-height:1.9;color:#2a2f3a;max-width:560px">
 <p>${esc(name)} 様</p>
 <p>「2027年をどう生きるか ─ 村主悠真 × つっちー」にお申し込みいただき、ありがとうございます。<br>以下の内容で受け付けました。</p>
@@ -65,7 +103,7 @@ ${pair ? `<b>一緒に参加する方</b><br>${esc(pair_name)} 様<br><br>` : ""
 ${referrer ? `<b>紹介者</b><br>${esc(referrer)}<br><br>` : ""}
 <b>合計</b>：${yen(total)}${pair ? "（2人分）" : ""}${extra ? `<br><small>${extra} 適用</small>` : ""}
 </div>
-<p>お支払い方法と会場・時間の詳細は、あらためてご連絡します。<br>最新情報はLINEオープンチャットでもお知らせしています。<br><a href="${OPENCHAT}">オープンチャットに参加する</a></p>
+${session ? `<p><b>お支払いについて</b><br>お申し込みのあと表示されたカード決済の画面でお支払いください。まだお済みでない場合は、下のリンクから24時間以内にお支払いいただけます。<br><a href="${session.url}">お支払いページを開く</a></p>` : ""}<p>会場・時間の詳細は、あらためてご連絡します。<br>最新情報はLINEオープンチャットでもお知らせしています。<br><a href="${OPENCHAT}">オープンチャットに参加する</a></p>
 <p>イベントページ：<a href="${SITE}">${SITE}</a></p>
 <p>ご不明な点は、このメールにそのまま返信してください。</p>
 <p>つっちー（結び）</p></div>`;
@@ -73,5 +111,5 @@ ${referrer ? `<b>紹介者</b><br>${esc(referrer)}<br><br>` : ""}
     const to = pair ? [email, pair_email] : [email];
     try { mailed = await sendMail(key, to, subject, body, [NOTIFY_TO]); } catch { mailed = false; }
   }
-  return res.status(200).json({ ok: true, mailed });
+  return res.status(200).json({ ok: true, mailed, checkout_url: session ? session.url : null });
 };
