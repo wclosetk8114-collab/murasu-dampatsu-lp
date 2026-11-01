@@ -139,6 +139,7 @@ details p{margin-top:10px;font-size:14px}
 .total{text-align:right;color:var(--nv);font-family:"Shippori Mincho",serif;font-size:16px;margin:6px 0 12px}
 .total b{font-size:26px}
 .total small{display:block;font-size:12px;color:var(--gd);font-family:"Noto Sans JP",sans-serif}
+.refnote{border:1px solid var(--gd);background:#fbf8f1;color:var(--nv);font-size:13px;padding:10px 14px;margin-bottom:18px}
 .err{color:#b23b3b;font-size:13px;min-height:1em;margin-bottom:8px}
 .form .btn{width:100%;cursor:pointer;font:inherit;letter-spacing:.14em}
 .form .btn:disabled{opacity:.5}
@@ -364,13 +365,15 @@ footer{text-align:center;font-size:12px;color:var(--mu);padding:36px 0 56px;back
    </fieldset>
    <label class="ck pairck"><input type="checkbox" name="pair" id="pair">ペアで申し込む（2人で2,000円オフ）</label>
    <div id="pairname" hidden><label>一緒に参加する方のお名前<em>必須</em><input name="pair_name" maxlength="100"></label><label>一緒に参加する方のメールアドレス<em>必須</em><input name="pair_email" type="email" maxlength="200"></label></div>
+   <div id="refnote" class="refnote" hidden></div>
+   <label>紹介者（いれば）<input name="referrer" id="referrer" maxlength="100" placeholder="紹介してくれた方のお名前"></label>
    <label>メッセージ（任意）<textarea name="message" rows="3" maxlength="1000"></textarea></label>
    <div class="total">合計 <b id="sum">0</b> 円<small id="sumnote"></small></div>
    <p class="err" id="err"></p>
    <button class="btn" type="submit" id="sb">この内容で申し込む</button>
    <p class="small">お支払い方法と会場の詳細は、申し込み後にメールでお送りします。</p>
   </form>
-  <div id="done" class="done" hidden><h3 class="min">お申し込みありがとうございます</h3><p>ご入力のメールアドレスに、詳細をお送りします。<br>最新情報はオープンチャットでも発信しています。</p><a class="linebtn" style="margin-top:18px" href="https://line.me/ti/g2/A6vHp2wI6sO00NYHovnl-rYSg7fXp-voM7pEjQ" target="_blank" rel="noopener">オープンチャットに参加</a></div>
+  <div id="done" class="done" hidden><h3 class="min">お申し込みありがとうございます</h3><p>ご入力のメールアドレスに、受付確認のメールをお送りします。<br>最新情報はオープンチャットでも発信しています。</p><a class="linebtn" style="margin-top:18px" href="https://line.me/ti/g2/A6vHp2wI6sO00NYHovnl-rYSg7fXp-voM7pEjQ" target="_blank" rel="noopener">オープンチャットに参加</a></div>
  </div>
 </section>
 
@@ -389,7 +392,8 @@ footer{text-align:center;font-size:12px;color:var(--mu);padding:36px 0 56px;back
 <footer>主催：結び ／ 企画：つっちー</footer>
 <script>
 (function(){
-var SB="https://cczerefroeveoobdlhoj.supabase.co/rest/v1/event_applications",K="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjemVyZWZyb2V2ZW9vYmRsaG9qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4OTg1NjYsImV4cCI6MjEwMzQ3NDU2Nn0.KsQtf2gYD5EOFYB9Jq-uH8pHI1dVIrUH99J0qkUJy54";
+var REF='';try{var q=new URLSearchParams(location.search).get('ref');if(q){REF=q.slice(0,100);try{localStorage.setItem('mref',REF)}catch(e){}}else{try{REF=localStorage.getItem('mref')||''}catch(e){}}}catch(e){}
+if(REF){var ri=document.getElementById('referrer');ri.value=REF;var rn=document.getElementById('refnote');rn.textContent=REF+' さんからのご紹介';rn.hidden=false;}
 var f=document.getElementById('f'),pair=document.getElementById('pair'),pn=document.getElementById('pairname');
 function calc(){
  var c=[].slice.call(f.querySelectorAll('input[name=plan]:checked')).map(function(x){return x.value});
@@ -414,8 +418,8 @@ f.addEventListener('submit',function(e){
  var pe=(d.get('pair_email')||'').trim();
  if(pair.checked&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(pe)){err.textContent='一緒に参加する方のメールアドレスを正しく入力してください';return}
  err.textContent='';var b=document.getElementById('sb');b.disabled=true;b.textContent='送信中…';
- fetch(SB,{method:'POST',headers:{'apikey':K,'Authorization':'Bearer '+K,'Content-Type':'application/json','Prefer':'return=minimal'},
-  body:JSON.stringify({event_key:'murasu-2026winter',name:name,email:email,plans:plans,pair:pair.checked,pair_name:pair.checked?(d.get('pair_name')||'').trim():null,pair_email:pair.checked?pe:null,message:(d.get('message')||'').trim()||null})})
+ fetch('/api/apply',{method:'POST',headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({name:name,email:email,plans:plans,pair:pair.checked,pair_name:pair.checked?(d.get('pair_name')||'').trim():null,pair_email:pair.checked?pe:null,referrer:(d.get('referrer')||'').trim()||null,ref_code:REF||null,message:(d.get('message')||'').trim()||null})})
  .then(function(r){if(!r.ok)throw 0;f.hidden=true;document.getElementById('done').hidden=false;document.getElementById('apply').scrollIntoView({behavior:'smooth'})})
  .catch(function(){err.textContent='送信できませんでした。時間をおいてもう一度お試しください。';b.disabled=false;b.textContent='この内容で申し込む'});
 });
@@ -423,4 +427,3 @@ f.addEventListener('submit',function(e){
 </script>
 </body>
 </html>
-<!-- v3 -->

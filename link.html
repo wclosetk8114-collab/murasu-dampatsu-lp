@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>紹介リンクをつくる ─ 2027年をどう生きるか</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@700&family=Noto+Sans+JP:wght@400;500&display=swap">
+<style>
+body{margin:0;background:radial-gradient(ellipse at 70% 20%,#dfe8f3,#fbfcfe 70%);font-family:"Noto Sans JP",sans-serif;color:#2a2f3a;min-height:100vh}
+.box{max-width:520px;margin:0 auto;padding:64px 24px}
+h1{font-family:"Shippori Mincho",serif;color:#1d3557;font-size:26px;margin:0 0 8px}
+p{font-size:14px;line-height:1.9;color:#6c7484}
+.card{background:#fff;border:1px solid rgba(176,145,90,.45);padding:28px 24px;margin-top:24px}
+label{display:block;color:#1d3557;font-size:14px}
+input{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:12px;border:1px solid #cdd5e1;font:inherit;font-size:16px}
+button{width:100%;margin-top:16px;background:#1d3557;color:#fff;border:0;padding:15px;font:inherit;letter-spacing:.12em;cursor:pointer}
+.out{margin-top:22px;display:none}
+.url{word-break:break-all;background:#f4f7fb;border:1px dashed #b0915a;padding:12px;font-size:14px;color:#1d3557}
+.ok{color:#b0915a;font-size:13px;margin-top:8px;min-height:1em}
+</style>
+</head>
+<body>
+<div class="box">
+ <h1>紹介リンクをつくる</h1>
+ <p>紹介してくれる方のお名前を入れると、その人専用の申し込みリンクができます。<br>このリンクから申し込んだ人は、紹介者の名前が自動で入ります。</p>
+ <div class="card">
+  <label>紹介者のお名前<input id="n" placeholder="例：山田花子" maxlength="50"></label>
+  <button id="go">リンクをつくる</button>
+  <div class="out" id="out">
+   <div class="url" id="url"></div>
+   <button id="cp">リンクをコピー</button>
+   <div class="ok" id="ok"></div>
+  </div>
+ </div>
+</div>
+<script>
+var base=location.origin+'/?ref=';
+document.getElementById('go').onclick=function(){
+ var n=document.getElementById('n').value.trim();if(!n){document.getElementById('n').focus();return}
+ document.getElementById('url').textContent=base+encodeURIComponent(n);
+ document.getElementById('out').style.display='block';document.getElementById('ok').textContent='';
+};
+document.getElementById('cp').onclick=function(){
+ var t=document.getElementById('url').textContent;
+ (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){document.getElementById('ok').textContent='コピーしました'}).catch(function(){var r=document.createRange();r.selectNode(document.getElementById('url'));getSelection().removeAllRanges();getSelection().addRange(r);document.getElementById('ok').textContent='選択しました。長押しでコピーしてください'});
+};
+</script>
+</body>
+</html>

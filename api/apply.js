@@ -1,0 +1,77 @@
+// 申し込み受付：Supabaseに保存 → 確認メール送信（RESEND_API_KEY があるとき）
+const SB_URL = "https://cczerefroeveoobdlhoj.supabase.co/rest/v1/event_applications";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjemVyZWZyb2V2ZW9vYmRsaG9qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4OTg1NjYsImV4cCI6MjEwMzQ3NDU2Nn0.KsQtf2gYD5EOFYB9Jq-uH8pHI1dVIrUH99J0qkUJy54";
+const MAIL_FROM = process.env.MAIL_FROM || "村主悠真×つっちー 講演会事務局 <hello@musubi-kakeizu.com>";
+const NOTIFY_TO = process.env.NOTIFY_TO || "w.closet.k8114@gmail.com";
+const REPLY_TO = process.env.REPLY_TO || "kyoten.zimukyoku@gmail.com";
+const OPENCHAT = "https://line.me/ti/g2/A6vHp2wI6sO00NYHovnl-rYSg7fXp-voM7pEjQ";
+const SITE = "https://murasu-dampatsu-lp.vercel.app";
+
+const PRICES = { "11/4 オンライン対談": 0, "11/27 講演会": 5500, "11/27 懇親会": 11000, "12/21 虚点": 11000 };
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const s = (v, n) => (typeof v === "string" ? v.trim().slice(0, n) : "");
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const yen = (n) => n.toLocaleString("ja-JP") + "円";
+
+function calc(plans, pair) {
+  let p = plans.reduce((a, k) => a + (PRICES[k] || 0), 0);
+  const set = plans.includes("11/27 講演会") && plans.includes("11/27 懇親会");
+  if (set) p -= 1500;
+  if (pair && p > 0) p = p * 2 - 2000;
+  return { total: p, set };
+}
+
+async function sendMail(key, to, subject, html, bcc) {
+  const r = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + key, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: MAIL_FROM, to, bcc, reply_to: REPLY_TO, subject, html }),
+  });
+  return r.ok;
+}
+
+module.exports = async (req, res) => {
+  if (req.method !== "POST") return res.status(405).json({ error: "method" });
+  let b = req.body;
+  if (typeof b === "string") { try { b = JSON.parse(b); } catch { b = {}; } }
+  b = b || {};
+  const name = s(b.name, 100), email = s(b.email, 200);
+  const plans = Array.isArray(b.plans) ? b.plans.filter((p) => p in PRICES) : [];
+  const pair = !!b.pair;
+  const pair_name = pair ? s(b.pair_name, 100) : "";
+  const pair_email = pair ? s(b.pair_email, 200) : "";
+  const referrer = s(b.referrer, 100), ref_code = s(b.ref_code, 100);
+  const message = s(b.message, 1000);
+  if (!name || !EMAIL_RE.test(email) || !plans.length) return res.status(400).json({ error: "input" });
+  if (pair && (!pair_name || !EMAIL_RE.test(pair_email))) return res.status(400).json({ error: "pair" });
+  const { total, set } = calc(plans, pair);
+
+  const row = { event_key: "murasu-2026winter", name, email, plans, pair, pair_name: pair_name || null, pair_email: pair_email || null,
+    referrer: referrer || null, ref_code: ref_code || null, message: message || null, total };
+  const ins = await fetch(SB_URL, { method: "POST", headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(row) });
+  if (!ins.ok) return res.status(500).json({ error: "save" });
+
+  const key = process.env.RESEND_API_KEY;
+  let mailed = false;
+  if (key) {
+    const list = plans.map((p) => `<li>${esc(p)}（${PRICES[p] ? yen(PRICES[p]) : "無料"}）</li>`).join("");
+    const extra = [set ? "講演会＋懇親会セット（1,500円おトク）" : "", pair ? "ペア割（2人分の合計から2,000円オフ）" : ""].filter(Boolean).join("／");
+    const body = `<div style="font-family:sans-serif;line-height:1.9;color:#2a2f3a;max-width:560px">
+<p>${esc(name)} 様</p>
+<p>「2027年をどう生きるか ─ 村主悠真 × つっちー」にお申し込みいただき、ありがとうございます。<br>以下の内容で受け付けました。</p>
+<div style="border:1px solid #d8cdb6;padding:16px 20px;margin:16px 0">
+<b>参加する回</b><ul style="margin:6px 0 10px">${list}</ul>
+${pair ? `<b>一緒に参加する方</b><br>${esc(pair_name)} 様<br><br>` : ""}
+${referrer ? `<b>紹介者</b><br>${esc(referrer)}<br><br>` : ""}
+<b>合計</b>：${yen(total)}${pair ? "（2人分）" : ""}${extra ? `<br><small>${extra} 適用</small>` : ""}
+</div>
+<p>お支払い方法と会場・時間の詳細は、あらためてご連絡します。<br>最新情報はLINEオープンチャットでもお知らせしています。<br><a href="${OPENCHAT}">オープンチャットに参加する</a></p>
+<p>イベントページ：<a href="${SITE}">${SITE}</a></p>
+<p>ご不明な点は、このメールにそのまま返信してください。</p>
+<p>つっちー（結び）</p></div>`;
+    const subject = "【お申し込み受付】2027年をどう生きるか ─ 村主悠真 × つっちー";
+    const to = pair ? [email, pair_email] : [email];
+    try { mailed = await sendMail(key, to, subject, body, [NOTIFY_TO]); } catch { mailed = false; }
+  }
+  return res.status(200).json({ ok: true, mailed });
+};
