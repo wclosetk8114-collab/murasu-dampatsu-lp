@@ -58,6 +58,15 @@ h2{font-family:"Shippori Mincho",serif;color:var(--nv);font-size:27px;font-weigh
 .movie{background:#fff;padding:24px 0 96px}
 .yt{position:relative;aspect-ratio:16/9;border:1px solid var(--ln);padding:8px;background:#fff;box-shadow:0 20px 50px rgba(29,53,87,.12)}
 .yt iframe{width:100%;height:100%;border:0;display:block}
+.oc{background:#fff;padding:0 0 96px}
+.ocbox{display:flex;align-items:center;gap:28px;border:1px solid var(--ln);background:linear-gradient(135deg,#fff,#eef3f9);padding:32px 34px}
+.octx{flex:1}
+.ocbox h3{color:var(--nv);font-size:21px;line-height:1.6;margin:6px 0 10px}
+.ocbox p{font-size:13px;color:var(--mu)}
+.linebtn{flex:none;display:inline-flex;align-items:center;gap:10px;background:#06c755;color:#fff;text-decoration:none;padding:16px 26px;font-weight:500;letter-spacing:.06em;border-radius:2px;transition:.2s}
+.linebtn:hover{opacity:.85}
+.linebtn svg{width:22px;height:22px}
+@media(max-width:760px){.ocbox{flex-direction:column;align-items:stretch;padding:26px 22px}.linebtn{justify-content:center}}
 /* intro */
 .intro{background:var(--pale)}
 .intro .big{font-family:"Shippori Mincho",serif;font-size:22px;line-height:1.85;color:var(--nv);margin-bottom:28px}
@@ -186,6 +195,19 @@ footer{text-align:center;font-size:12px;color:var(--mu);padding:36px 0 56px;back
  </div>
 </section>
 
+<section class="oc">
+ <div class="wrap">
+  <div class="ocbox">
+   <div class="octx">
+    <div class="en">OPEN CHAT</div>
+    <h3 class="min">イベントの詳細・最新情報は<br>LINEオープンチャットで</h3>
+    <p>「村主悠真×つっちー｜11/4 20時〜オンライン｜11/27夜 講演会＆懇親会｜12/21夜 虚点」<br>会場や時間のお知らせ、当日の案内はここで発信しています。</p>
+   </div>
+   <a class="linebtn" href="https://line.me/ti/g2/A6vHp2wI6sO00NYHovnl-rYSg7fXp-voM7pEjQ" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 3C6.5 3 2 6.6 2 11c0 3.9 3.5 7.2 8.3 7.9.3.1.8.2.9.5.1.3.1.7 0 1l-.1.9c0 .3-.2 1 .9.5s5.9-3.5 8-6C21.3 14.4 22 12.8 22 11c0-4.4-4.5-8-10-8z"/></svg>オープンチャットに参加</a>
+  </div>
+ </div>
+</section>
+
 <section class="intro">
  <div class="wrap">
   <div class="en">INTRODUCTION</div>
@@ -301,7 +323,7 @@ footer{text-align:center;font-size:12px;color:var(--mu);padding:36px 0 56px;back
   <details><summary>1回だけの参加もできますか？</summary><p>できます。どの回からでも参加できます。</p></details>
   <details><summary>ペア割はどう使いますか？</summary><p>申し込みフォームで「ペアで申し込む」にチェックを入れ、一緒に参加する方のお名前とメールアドレスを書いてください。2人分の合計から2,000円オフになります。</p></details>
   <details><summary>会場はどこですか？</summary><p>11/27は都内の会場です。詳しい場所は、お申し込みの方にメールでお知らせします。</p></details>
-  <details><summary>申し込み後の流れは？</summary><p>このページの申し込みフォームから送ると、詳細と参加方法・お支払い方法をメールでお送りします。</p></details>
+  <details><summary>申し込み後の流れは？</summary><p>このページの申し込みフォームから送ると、詳細と参加方法・お支払い方法をメールでお送りします。会場や時間などの最新情報は、LINEオープンチャットでもお知らせします。</p></details>
  </div>
 </section>
 
@@ -327,7 +349,7 @@ footer{text-align:center;font-size:12px;color:var(--mu);padding:36px 0 56px;back
    <button class="btn" type="submit" id="sb">この内容で申し込む</button>
    <p class="small">お支払い方法と会場の詳細は、申し込み後にメールでお送りします。</p>
   </form>
-  <div id="done" class="done" hidden><h3 class="min">お申し込みありがとうございます</h3><p>ご入力のメールアドレスに、詳細をお送りします。<br>当日お会いできるのを楽しみにしています。</p></div>
+  <div id="done" class="done" hidden><h3 class="min">お申し込みありがとうございます</h3><p>ご入力のメールアドレスに、詳細をお送りします。<br>最新情報はオープンチャットでも発信しています。</p><a class="linebtn" style="margin-top:18px" href="https://line.me/ti/g2/A6vHp2wI6sO00NYHovnl-rYSg7fXp-voM7pEjQ" target="_blank" rel="noopener">オープンチャットに参加</a></div>
  </div>
 </section>
 
