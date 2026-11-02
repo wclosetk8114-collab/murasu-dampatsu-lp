@@ -5,8 +5,8 @@ const MAIL_FROM = process.env.MAIL_FROM || "村主悠真×つっちー 講演会
 const NOTIFY_TO = process.env.NOTIFY_TO || "w.closet.k8114@gmail.com";
 const REPLY_TO = process.env.REPLY_TO || "kyoten.zimukyoku@gmail.com";
 const SITE = "https://murasu-dampatsu-lp.vercel.app";
-const PRICES = { "11/4 オンライン対談": 0, "11/27 講演会": 5500, "11/27 懇親会": 11000, "12/21 虚点": 11000, "12/21 虚点（オンライン）": 11000 };
-const HALF = ["11/27 講演会", "11/27 懇親会"];
+const PRICES = { "11/4 オンライン対談": 0, "11/27 講演会": 5500, "11/27 講演会（オンライン）": 5500, "11/27 懇親会": 11000, "12/21 虚点": 11000, "12/21 虚点（オンライン）": 11000 };
+const HALF = ["11/27 講演会", "11/27 講演会（オンライン）", "11/27 懇親会"];
 const yen = (n) => Number(n).toLocaleString("ja-JP") + "円";
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 

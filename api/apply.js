@@ -8,13 +8,13 @@ const REPLY_TO = process.env.REPLY_TO || "kyoten.zimukyoku@gmail.com";
 const OPENCHAT = "https://line.me/ti/g2/A6vHp2wI6sO00NYHovnl-rYSg7fXp-voM7pEjQ";
 const SITE = "https://murasu-dampatsu-lp.vercel.app";
 
-const PRICES = { "11/4 オンライン対談": 0, "11/27 講演会": 5500, "11/27 懇親会": 11000, "12/21 虚点": 11000, "12/21 虚点（オンライン）": 11000 };
+const PRICES = { "11/4 オンライン対談": 0, "11/27 講演会": 5500, "11/27 講演会（オンライン）": 5500, "11/27 懇親会": 11000, "12/21 虚点": 11000, "12/21 虚点（オンライン）": 11000 };
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const s = (v, n) => (typeof v === "string" ? v.trim().slice(0, n) : "");
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const yen = (n) => n.toLocaleString("ja-JP") + "円";
 
-const HALF = ["11/27 講演会", "11/27 懇親会"];
+const HALF = ["11/27 講演会", "11/27 講演会（オンライン）", "11/27 懇親会"];
 function person(plans, stu) {
   let p = plans.reduce((a, k) => a + (stu && HALF.includes(k) ? PRICES[k] / 2 : PRICES[k] || 0), 0);
   if (plans.includes("11/27 講演会") && plans.includes("11/27 懇親会")) p -= stu ? 750 : 1500;
