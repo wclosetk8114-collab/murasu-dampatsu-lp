@@ -1,4 +1,4 @@
-const { rpc, PRICES, HALF, LIMITS, remaining, person } = require("./_lib");
+const { rpc, PRICES, HALF, LIMITS, remaining, person, isEarly, EARLY_OFF } = require("./_lib");
 // 申し込み受付：Supabaseに保存 → 確認メール送信（RESEND_API_KEY があるとき）
 const SB_URL = "https://cczerefroeveoobdlhoj.supabase.co/rest/v1/event_applications";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjemVyZWZyb2V2ZW9vYmRsaG9qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4OTg1NjYsImV4cCI6MjEwMzQ3NDU2Nn0.KsQtf2gYD5EOFYB9Jq-uH8pHI1dVIrUH99J0qkUJy54";
@@ -15,9 +15,10 @@ const yen = (n) => n.toLocaleString("ja-JP") + "円";
 
 function calc(plans, pair, stu, pstu, free) {
   const set = plans.includes("11/27 講演会＋懇親会セット");
-  const a = free ? 0 : person(plans, stu);
+  const early = isEarly();
+  const a = free ? 0 : person(plans, stu, false, early);
   if (!pair) return { total: a, set };
-  const b = person(plans, pstu);
+  const b = person(plans, pstu, false, early);
   return { total: Math.max(0, a - 1500) + Math.max(0, b - 1500), set };
 }
 
@@ -101,7 +102,8 @@ module.exports = async (req, res) => {
   let mailed = false;
   if (key) {
     const list = plans.map((p) => `<li>${esc(p)}（${PRICES[p] ? yen(student && HALF.includes(p) ? PRICES[p] / 2 : PRICES[p]) : "無料"}）</li>`).join("");
-    const extra = [free ? "紹介特典（ご本人分 無料）" : "", student ? "学生半額" : "", pair_student ? "同伴者 学生半額" : "", pair ? "ペア割（1人1,500円オフ）" : ""].filter(Boolean).join("／");
+    const early = isEarly() && plans.some((p) => p.startsWith("11/27"));
+    const extra = [free ? "紹介特典（ご本人分 無料）" : "", early ? "早割（11/27 1人1,000円オフ）" : "", student ? "学生半額" : "", pair_student ? "同伴者 学生半額" : "", pair ? "ペア割（1人1,500円オフ）" : ""].filter(Boolean).join("／");
     const body = `<div style="font-family:sans-serif;line-height:1.9;color:#2a2f3a;max-width:560px">
 <p>${esc(name)} 様</p>
 <p>「2027年をどう生きるか ─ 村主悠真 × つっちー」にお申し込みいただき、ありがとうございます。<br>以下の内容で受け付けました。</p>

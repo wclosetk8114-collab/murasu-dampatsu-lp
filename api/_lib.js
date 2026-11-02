@@ -13,12 +13,17 @@ const LEGACY = { "11/27 講演会": 5500, "11/27 講演会（オンライン）"
 const yen = (n) => Number(n).toLocaleString("ja-JP") + "円";
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-function person(plans, stu, legacy) {
+// 早割：2026/11/4 23:59（日本時間）までの申し込みは、11/27の講演会・セットが1人1,000円オフ
+const EARLY_END = new Date("2026-11-04T23:59:59+09:00");
+const EARLY_OFF = 1000;
+const isEarly = (d) => (d ? new Date(d) : new Date()) <= EARLY_END;
+function person(plans, stu, legacy, early) {
   const T = legacy ? Object.assign({}, PRICES, LEGACY) : PRICES;
   const H = legacy ? HALF.concat(["11/27 懇親会"]) : HALF;
   let p = plans.reduce((a, k) => a + (stu && H.includes(k) ? (T[k] || 0) / 2 : T[k] || 0), 0);
   if (legacy && plans.includes("11/27 講演会") && plans.includes("11/27 懇親会")) p -= stu ? 750 : 1500;
-  return p;
+  if (early && !legacy && plans.some((k) => k.startsWith("11/27"))) p -= EARLY_OFF;
+  return Math.max(0, p);
 }
 async function remaining() {
   const out = {};
@@ -71,7 +76,7 @@ async function runReferralRefunds() {
   const list = (await rpc("adm_refund_candidates", {})) || [];
   for (const a of list) {
     const legacy = (a.plans || []).includes("11/27 懇親会") || new Date(a.created_at) < new Date("2026-11-03T00:00:00+09:00");
-    const own = a.pair ? Math.max(0, person(a.plans || [], a.student, legacy) - 1500) : a.total;
+    const own = a.pair ? Math.max(0, person(a.plans || [], a.student, legacy, isEarly(a.created_at)) - 1500) : a.total;
     if (!own) continue;
     const s = await stripe("GET", "checkout/sessions/" + encodeURIComponent(a.stripe_session_id));
     if (!s || !s.payment_intent) continue;
@@ -89,4 +94,4 @@ async function runReferralRefunds() {
   return done;
 }
 
-module.exports = { SB, SB_KEY, SITE, PRICES, HALF, LIMITS, remaining, yen, esc, person, rpc, stripe, sendMail, confirmSession, runReferralRefunds };
+module.exports = { SB, SB_KEY, SITE, PRICES, HALF, LIMITS, remaining, isEarly, EARLY_OFF, yen, esc, person, rpc, stripe, sendMail, confirmSession, runReferralRefunds };
