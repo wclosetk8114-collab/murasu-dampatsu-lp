@@ -50,6 +50,15 @@ h2{font-family:"Shippori Mincho",serif;color:var(--nv);font-size:27px;font-weigh
 .btn{display:inline-block;background:var(--nv);color:#fff;text-decoration:none;padding:16px 46px;letter-spacing:.14em;font-size:15px;transition:.2s;border:1px solid var(--nv)}
 .btn:hover{background:#fff;color:var(--nv)}
 .hero .btn{margin-top:34px}
+.hcta{margin-top:34px}
+.hcta .btn.big{margin:0;display:inline-flex;align-items:center;gap:14px;font-size:18px;font-weight:500;padding:20px 52px;background:var(--gd);border-color:var(--gd);color:#fff;box-shadow:0 12px 30px rgba(176,145,90,.35);border-radius:2px}
+.hcta .btn.big:hover{background:var(--nv);border-color:var(--nv);color:#fff}
+.hcta .arw{font-size:20px;transition:.2s}
+.hcta .btn.big:hover .arw{transform:translateX(4px)}
+.hpoints{list-style:none;display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:14px;font-size:13px;color:var(--nv2)}
+.hpoints li:before{content:"✓ ";color:var(--gd);font-weight:700}
+.hpoints b{color:var(--nv)}
+@media(max-width:760px){.hcta .btn.big{display:flex;justify-content:center;width:100%;padding:18px 20px}}
 /* schedule */
 .sched{background:#fff;padding:56px 0 64px}
 .row{display:grid;grid-template-columns:260px 1fr;align-items:center;padding:20px 8px;border-bottom:1px solid var(--ln)}
@@ -220,7 +229,10 @@ footer{text-align:center;font-size:12px;color:var(--mu);padding:36px 0 56px;back
    <h1><span class="a">2027年を</span><span class="b">どう生きるか</span></h1>
    <div class="sub">村主悠真　冬の講演シリーズ</div>
    <div class="hook">急きょ開催決定。<br>年明けからはなかなかお会いできなくなるため、<br>村主さんの話を直接聴ける貴重な機会です。</div>
-   <a class="btn" href="#apply">参加を申し込む</a>
+   <div class="hcta">
+    <a class="btn big" href="#apply">参加を申し込む<span class="arw">→</span></a>
+    <ul class="hpoints"><li>11/4 オンライン対談は<b>無料</b></li><li><b>1回だけ</b>の参加もOK</li><li>申し込みは<b>1分</b>で完了</li></ul>
+   </div>
   </div>
   <div class="duo">
    <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
