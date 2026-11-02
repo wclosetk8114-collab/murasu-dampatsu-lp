@@ -1,4 +1,4 @@
-const { rpc } = require("./_lib");
+const { rpc, PRICES, HALF, LIMITS, remaining, person } = require("./_lib");
 // 申し込み受付：Supabaseに保存 → 確認メール送信（RESEND_API_KEY があるとき）
 const SB_URL = "https://cczerefroeveoobdlhoj.supabase.co/rest/v1/event_applications";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjemVyZWZyb2V2ZW9vYmRsaG9qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4OTg1NjYsImV4cCI6MjEwMzQ3NDU2Nn0.KsQtf2gYD5EOFYB9Jq-uH8pHI1dVIrUH99J0qkUJy54";
@@ -8,20 +8,13 @@ const REPLY_TO = process.env.REPLY_TO || "kyoten.zimukyoku@gmail.com";
 const OPENCHAT = "https://line.me/ti/g2/A6vHp2wI6sO00NYHovnl-rYSg7fXp-voM7pEjQ";
 const SITE = "https://murasu-dampatsu-lp.vercel.app";
 
-const PRICES = { "11/4 オンライン対談": 0, "11/27 講演会": 5500, "11/27 講演会（オンライン）": 5500, "11/27 懇親会": 11000, "12/21 虚点": 11000, "12/21 虚点（オンライン）": 11000 };
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const s = (v, n) => (typeof v === "string" ? v.trim().slice(0, n) : "");
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const yen = (n) => n.toLocaleString("ja-JP") + "円";
 
-const HALF = ["11/27 講演会", "11/27 講演会（オンライン）", "11/27 懇親会"];
-function person(plans, stu) {
-  let p = plans.reduce((a, k) => a + (stu && HALF.includes(k) ? PRICES[k] / 2 : PRICES[k] || 0), 0);
-  if (plans.includes("11/27 講演会") && plans.includes("11/27 懇親会")) p -= stu ? 750 : 1500;
-  return p;
-}
 function calc(plans, pair, stu, pstu, free) {
-  const set = plans.includes("11/27 講演会") && plans.includes("11/27 懇親会");
+  const set = plans.includes("11/27 講演会＋懇親会セット");
   const a = free ? 0 : person(plans, stu);
   if (!pair) return { total: a, set };
   const b = person(plans, pstu);
@@ -35,6 +28,7 @@ async function checkout(key, { total, name, email, plans, pair, id }) {
   f.append("customer_email", email);
   f.append("success_url", SITE + "/?paid=1&session_id={CHECKOUT_SESSION_ID}#apply");
   f.append("cancel_url", SITE + "/?cancel=1#apply");
+  f.append("expires_at", String(Math.floor(Date.now() / 1000) + 31 * 60));
   f.append("line_items[0][quantity]", "1");
   f.append("line_items[0][price_data][currency]", "jpy");
   f.append("line_items[0][price_data][unit_amount]", String(total));
@@ -75,7 +69,16 @@ module.exports = async (req, res) => {
   const message = s(b.message, 1000);
   if (!name || !EMAIL_RE.test(email) || !plans.length) return res.status(400).json({ error: "input" });
   if (pair && (!pair_name || !EMAIL_RE.test(pair_email))) return res.status(400).json({ error: "pair" });
+  if (plans.filter((p) => p.startsWith("11/27")).length > 1) return res.status(400).json({ error: "input" });
+  if (plans.filter((p) => p.startsWith("12/21")).length > 1) return res.status(400).json({ error: "input" });
   const student = !!b.student, pair_student = pair && !!b.pair_student;
+  // 定員チェック（セット30名・虚点会場20名）
+  const need = pair ? 2 : 1;
+  try {
+    const rem = await remaining();
+    const full = plans.filter((p) => p in LIMITS && rem[p] < need);
+    if (full.length) return res.status(409).json({ error: "full", plans: full, remaining: rem });
+  } catch {}
   // 紹介特典：支払い済みの人を2人以上紹介した人は本人分が無料（ページには書かない）
   let free = false;
   try { free = (await rpc("adm_paid_referral_count", { p_name: name })) >= 2; } catch {}
@@ -98,7 +101,7 @@ module.exports = async (req, res) => {
   let mailed = false;
   if (key) {
     const list = plans.map((p) => `<li>${esc(p)}（${PRICES[p] ? yen(student && HALF.includes(p) ? PRICES[p] / 2 : PRICES[p]) : "無料"}）</li>`).join("");
-    const extra = [free ? "紹介特典（ご本人分 無料）" : "", set ? "講演会＋懇親会セット" : "", student ? "学生半額" : "", pair_student ? "同伴者 学生半額" : "", pair ? "ペア割（1人1,500円オフ）" : ""].filter(Boolean).join("／");
+    const extra = [free ? "紹介特典（ご本人分 無料）" : "", student ? "学生半額" : "", pair_student ? "同伴者 学生半額" : "", pair ? "ペア割（1人1,500円オフ）" : ""].filter(Boolean).join("／");
     const body = `<div style="font-family:sans-serif;line-height:1.9;color:#2a2f3a;max-width:560px">
 <p>${esc(name)} 様</p>
 <p>「2027年をどう生きるか ─ 村主悠真 × つっちー」にお申し込みいただき、ありがとうございます。<br>以下の内容で受け付けました。</p>

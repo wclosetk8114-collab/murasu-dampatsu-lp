@@ -5,15 +5,28 @@ const MAIL_FROM = process.env.MAIL_FROM || "村主悠真×つっちー 講演会
 const NOTIFY_TO = process.env.NOTIFY_TO || "w.closet.k8114@gmail.com";
 const REPLY_TO = process.env.REPLY_TO || "kyoten.zimukyoku@gmail.com";
 const SITE = "https://murasu-dampatsu-lp.vercel.app";
-const PRICES = { "11/4 オンライン対談": 0, "11/27 講演会": 5500, "11/27 講演会（オンライン）": 5500, "11/27 懇親会": 11000, "12/21 虚点": 11000, "12/21 虚点（オンライン）": 11000 };
-const HALF = ["11/27 講演会", "11/27 講演会（オンライン）", "11/27 懇親会"];
+const PRICES = { "11/4 オンライン対談": 0, "11/27 講演会": 6600, "11/27 講演会（オンライン）": 6600, "11/27 講演会＋懇親会セット": 15500, "12/21 虚点": 11000, "12/21 虚点（オンライン）": 11000 };
+const HALF = ["11/27 講演会", "11/27 講演会（オンライン）", "11/27 講演会＋懇親会セット"];
+const LIMITS = { "11/27 講演会＋懇親会セット": 30, "12/21 虚点": 20 };
+// 旧料金（2026-11-03より前の申し込み）の返金計算用
+const LEGACY = { "11/27 講演会": 5500, "11/27 講演会（オンライン）": 5500, "11/27 懇親会": 11000 };
 const yen = (n) => Number(n).toLocaleString("ja-JP") + "円";
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-function person(plans, stu) {
-  let p = plans.reduce((a, k) => a + (stu && HALF.includes(k) ? PRICES[k] / 2 : PRICES[k] || 0), 0);
-  if (plans.includes("11/27 講演会") && plans.includes("11/27 懇親会")) p -= stu ? 750 : 1500;
+function person(plans, stu, legacy) {
+  const T = legacy ? Object.assign({}, PRICES, LEGACY) : PRICES;
+  const H = legacy ? HALF.concat(["11/27 懇親会"]) : HALF;
+  let p = plans.reduce((a, k) => a + (stu && H.includes(k) ? (T[k] || 0) / 2 : T[k] || 0), 0);
+  if (legacy && plans.includes("11/27 講演会") && plans.includes("11/27 懇親会")) p -= stu ? 750 : 1500;
   return p;
+}
+async function remaining() {
+  const out = {};
+  for (const k of Object.keys(LIMITS)) {
+    let used = 0; try { used = await rpc("adm_plan_count", { p_plan: k }); } catch {}
+    out[k] = Math.max(0, LIMITS[k] - (used || 0));
+  }
+  return out;
 }
 
 async function rpc(fn, args) {
@@ -57,7 +70,8 @@ async function runReferralRefunds() {
   const done = [];
   const list = (await rpc("adm_refund_candidates", {})) || [];
   for (const a of list) {
-    const own = a.pair ? Math.max(0, person(a.plans || [], a.student) - 1500) : a.total;
+    const legacy = (a.plans || []).includes("11/27 懇親会") || new Date(a.created_at) < new Date("2026-11-03T00:00:00+09:00");
+    const own = a.pair ? Math.max(0, person(a.plans || [], a.student, legacy) - 1500) : a.total;
     if (!own) continue;
     const s = await stripe("GET", "checkout/sessions/" + encodeURIComponent(a.stripe_session_id));
     if (!s || !s.payment_intent) continue;
@@ -75,4 +89,4 @@ async function runReferralRefunds() {
   return done;
 }
 
-module.exports = { SB, SB_KEY, SITE, PRICES, HALF, yen, esc, person, rpc, stripe, sendMail, confirmSession, runReferralRefunds };
+module.exports = { SB, SB_KEY, SITE, PRICES, HALF, LIMITS, remaining, yen, esc, person, rpc, stripe, sendMail, confirmSession, runReferralRefunds };
