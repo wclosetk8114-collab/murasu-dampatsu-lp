@@ -35,7 +35,7 @@ async function stripe(method, path, form) {
 }
 
 async function sendMail(to, subject, html, bcc) {
-  const key = process.env.RESEND_API_KEY;
+  const key = (process.env.RESEND_API_KEY || process.env.resend);
   if (!key) return false;
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST", headers: { Authorization: "Bearer " + key, "Content-Type": "application/json" },

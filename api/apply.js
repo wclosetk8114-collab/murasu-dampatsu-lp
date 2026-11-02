@@ -93,7 +93,7 @@ module.exports = async (req, res) => {
   const ins = await fetch(SB_URL, { method: "POST", headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(row) });
   if (!ins.ok) return res.status(500).json({ error: "save" });
 
-  const key = process.env.RESEND_API_KEY;
+  const key = (process.env.RESEND_API_KEY || process.env.resend);
   let mailed = false;
   if (key) {
     const list = plans.map((p) => `<li>${esc(p)}（${PRICES[p] ? yen(student && HALF.includes(p) ? PRICES[p] / 2 : PRICES[p]) : "無料"}）</li>`).join("");
