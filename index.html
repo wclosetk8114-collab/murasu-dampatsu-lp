@@ -93,6 +93,27 @@ h2{font-family:"Shippori Mincho",serif;color:var(--nv);font-size:27px;font-weigh
 .pts,.flow{margin:0 0 4px 1.2em;font-size:14px;color:var(--tx)}
 .pts li,.flow li{margin:2px 0}
 .rec{font-size:14px;margin:0}
+
+/* story */
+.story{background:#fff}
+.story .lead{font-family:"Shippori Mincho",serif;color:var(--nv);font-size:17px;line-height:1.9;margin:-14px 0 50px}
+.tl{list-style:none;position:relative;padding-left:34px}
+.tl:before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:1px;background:linear-gradient(180deg,var(--gd),rgba(176,145,90,.25))}
+.tl li{position:relative;display:grid;grid-template-columns:1.05fr 1fr;gap:28px;align-items:center;margin-bottom:56px}
+.tl li:before{content:"";position:absolute;left:-31px;top:10px;width:11px;height:11px;border-radius:50%;background:#fff;border:2px solid var(--gd)}
+.tl li.notxt,.tl li.now{grid-template-columns:1fr}
+.tl li.now:before{background:var(--gd);box-shadow:0 0 0 6px rgba(176,145,90,.18)}
+.tl figure{margin:0;border-radius:6px;overflow:hidden;box-shadow:0 16px 40px rgba(29,53,87,.14)}
+.tl img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;filter:saturate(.92)}
+.tl .ch{font-family:"Cormorant Garamond",serif;color:var(--gd);letter-spacing:.24em;font-size:13px}
+.tl .when{font-size:12px;color:var(--mu);margin:2px 0 8px}
+.tl h3{font-family:"Shippori Mincho",serif;color:var(--nv);font-size:21px;line-height:1.6;margin-bottom:8px}
+.tl p{font-size:14px}
+.tl li.notxt .tx,.tl li.now .tx{background:var(--pale);padding:26px 28px;border-left:2px solid var(--gd)}
+.tl li.now .tx{background:linear-gradient(135deg,#fbf8f1,#eef3f9)}
+.tl li.now h3{font-size:24px}
+.tl li.now .btn{margin-top:18px}
+@media(max-width:760px){.tl li{grid-template-columns:1fr;gap:14px}.story .lead{font-size:15px}.pc{display:none}}
 /* for */
 .for{background:var(--pale)}
 .for li{list-style:none;padding:15px 0 15px 32px;border-bottom:1px solid rgba(29,53,87,.1);position:relative;color:var(--nv);font-family:"Shippori Mincho",serif;font-size:16px}
@@ -244,6 +265,45 @@ footer{text-align:center;font-size:12px;color:var(--mu);padding:36px 0 56px;back
   <p>私（つっちー）は約3年前に講演会で村主さんと出会い、去年の10月から瞑想の講座に参加。そこから約1年間、講演会や拠点の事務局として関わってきました。村主さんと出会って、迷いが消え、人生が動き出しました。</p>
   <p>年明けからは、村主さんになかなかお会いできなくなります。だからこそ、まだ村主さんの話を聴いたことがない人にも、この冬にぜひ届けたいと思い、急きょ開催を決めました。</p>
   <p>11/4のオンライン対談で、まず村主さんという人にふれる。11/27の講演会で、2027年という時代の流れを読む。12/21の虚点で、それを自分の現実にどう落とすかを考え、仲間とつながる。1回だけでも参加できます。</p>
+ </div>
+</section>
+
+<section class="story">
+ <div class="wrap">
+  <div class="en">STORY</div>
+  <h2>村主さんと出会って、私はこう変わった</h2>
+  <p class="lead">迷っていた私が、出会い、踏み出し、生まれ変わり、<br class="pc">今度は「届ける側」に立つまでの物語。</p>
+  <ol class="tl">
+   <li>
+    <figure><img src="st1.jpg" alt="村主悠真さんの講演会" loading="lazy"></figure>
+    <div class="tx"><div class="ch">CHAPTER 01 ─ 出会い</div><div class="when">約3年前</div>
+     <h3>はじめて、村主さんの講演会へ</h3>
+     <p>大きなホールで、客席のひとりとして村主さんの話を聴いたのが始まり。何かが変わる予感だけが、心に残りました。</p></div>
+   </li>
+   <li>
+    <figure><img src="st2.jpg" alt="学校支援×世界平和プロジェクトの勉強会" loading="lazy"></figure>
+    <div class="tx"><div class="ch">CHAPTER 02 ─ 一歩踏み出す</div><div class="when">2024年11月</div>
+     <h3>学校支援 × 世界平和プロジェクトの勉強会へ</h3>
+     <p>聴くだけでなく、自分も関わりたい。発展途上国の学校支援と世界平和のプロジェクトの勉強会に、はじめて参加しました。</p></div>
+   </li>
+   <li class="notxt">
+    <div class="tx"><div class="ch">CHAPTER 03 ─ 深める</div><div class="when">2025年10月〜</div>
+     <h3>瞑想講座へ。そして事務局として</h3>
+     <p>村主さんの瞑想講座に参加し、毎日瞑想を続けるように。講演会や拠点の事務局として、約1年間、村主さんのそばで関わってきました。</p></div>
+   </li>
+   <li>
+    <figure><img src="st3.jpg" alt="断髪式" loading="lazy" style="object-position:50% 20%"></figure>
+    <div class="tx"><div class="ch">CHAPTER 04 ─ 生まれ変わる</div><div class="when">2026年7月</div>
+     <h3>断髪式。迷いを切って、人生が動き出した</h3>
+     <p>仲間に見守られながら、髪を切って区切りをつけました。迷いが消え、自分の人生が大きく動き出したのはここからです。</p></div>
+   </li>
+   <li class="now">
+    <div class="tx"><div class="ch">CHAPTER 05 ─ 届ける</div><div class="when">2026年冬</div>
+     <h3>今度は、私が村主さんを届ける番</h3>
+     <p>客席にいた私が、この冬は場をつくる側に。あの日の私のように、まだ村主さんに出会っていない人へ。次の物語の主人公は、あなたです。</p>
+     <a class="btn" href="#apply">参加を申し込む</a></div>
+   </li>
+  </ol>
  </div>
 </section>
 
