@@ -47,8 +47,9 @@ async function checkout(key, { total, name, email, plans, pair, id }) {
   const r = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST", headers: { Authorization: "Bearer " + key, "Content-Type": "application/x-www-form-urlencoded" }, body: f.toString(),
   });
-  if (!r.ok) return null;
-  return r.json();
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { console.error("stripe error", r.status, j.error && j.error.message); return { _err: (j.error && (j.error.code || j.error.type)) || String(r.status), _msg: j.error && j.error.message ? String(j.error.message).replace(/sk_[a-z]+_[A-Za-z0-9*]+/g, "sk_***") : "" }; }
+  return j;
 }
 
 async function sendMail(key, to, subject, html, bcc) {
@@ -85,7 +86,7 @@ module.exports = async (req, res) => {
   const skey = process.env.STRIPE_SECRET_KEY;
   if (skey && total > 0) {
     session = await checkout(skey, { total, name, email, plans, pair, id: Date.now().toString(36) });
-    if (!session) return res.status(502).json({ error: "stripe" });
+    if (!session || session._err) return res.status(502).json({ error: "stripe", code: session && session._err, detail: session && session._msg });
   }
 
   const row = { event_key: "murasu-2026winter", name, email, plans, pair, pair_name: pair_name || null, pair_email: pair_email || null,
