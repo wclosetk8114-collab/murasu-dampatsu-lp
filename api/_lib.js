@@ -25,6 +25,11 @@ function person(plans, stu, legacy, early) {
   if (early && !legacy && plans.some((k) => k.startsWith("11/27"))) p -= EARLY_OFF;
   return Math.max(0, p);
 }
+// 紹介特典：支払い済みの人を2人以上紹介した人は「11/27 講演会」が無料（セットの人は講演会分を引く）
+const LECTURE_PLANS = ["11/27 講演会", "11/27 講演会（オンライン）", "11/27 講演会＋懇親会セット"];
+function lectureValue(plans, stu) {
+  return (plans || []).some((k) => LECTURE_PLANS.includes(k)) ? (stu ? 3300 : 6600) : 0;
+}
 async function remaining() {
   const out = {};
   for (const k of Object.keys(LIMITS)) {
@@ -76,7 +81,8 @@ async function runReferralRefunds() {
   const list = (await rpc("adm_refund_candidates", {})) || [];
   for (const a of list) {
     const legacy = (a.plans || []).includes("11/27 懇親会") || new Date(a.created_at) < new Date("2026-11-03T00:00:00+09:00");
-    const own = a.pair ? Math.max(0, person(a.plans || [], a.student, legacy, isEarly(a.created_at)) - 1500) : a.total;
+    const ownPaid = a.pair ? Math.max(0, person(a.plans || [], a.student, legacy, isEarly(a.created_at)) - 1500) : a.total;
+    const own = Math.min(lectureValue(a.plans, a.student), ownPaid);
     if (!own) continue;
     const s = await stripe("GET", "checkout/sessions/" + encodeURIComponent(a.stripe_session_id));
     if (!s || !s.payment_intent) continue;
@@ -86,7 +92,7 @@ async function runReferralRefunds() {
     await rpc("adm_mark_refunded", { p_id: a.id, p_amount: refundAmt, p_refund: rf.id });
     await sendMail([a.email], "【紹介特典】参加費を返金しました ─ 2027年をどう生きるか",
       `<div style="font-family:sans-serif;line-height:1.9;color:#2a2f3a;max-width:560px"><p>${esc(a.name)} 様</p>
-<p>お知り合いを${a.referred}名ご紹介いただき、ありがとうございます。<br>紹介特典として、${esc(a.name)} 様ご本人の参加費 <b>${yen(refundAmt)}</b> を返金しました。</p>
+<p>お知り合いを${a.referred}名ご紹介いただき、ありがとうございます。<br>紹介特典として、11/27 講演会の参加費 <b>${yen(refundAmt)}</b> を返金しました（講演会が無料になります）。</p>
 <p>カード会社によって、返金の反映まで数日〜1か月ほどかかる場合があります。</p>
 <p>当日お会いできるのを楽しみにしています。</p><p>つっちー（結び）</p></div>`, [NOTIFY_TO]).catch(() => {});
     done.push({ id: a.id, amount: refundAmt });
@@ -94,4 +100,4 @@ async function runReferralRefunds() {
   return done;
 }
 
-module.exports = { SB, SB_KEY, SITE, PRICES, HALF, LIMITS, remaining, isEarly, EARLY_OFF, yen, esc, person, rpc, stripe, sendMail, confirmSession, runReferralRefunds };
+module.exports = { SB, SB_KEY, SITE, PRICES, HALF, LIMITS, remaining, isEarly, EARLY_OFF, lectureValue, yen, esc, person, rpc, stripe, sendMail, confirmSession, runReferralRefunds };
