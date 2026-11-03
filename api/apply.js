@@ -132,6 +132,13 @@ ${session ? `<p><b>お支払いについて</b><br>お申し込みのあと表�
     const subject = "【お申し込み受付】2027年をどう生きるか ─ 村主悠真 × つっちー";
     const to = pair ? [email, pair_email] : [email];
     try { mailed = await sendMail(key, to, subject, body, [NOTIFY_TO]); } catch { mailed = false; }
+    // 紹介経由の申し込みは、事務局あてに別途お知らせ（件名で紹介者がわかる）
+    const refBy = ref_code || referrer;
+    if (refBy) {
+      const note = `<div style="font-family:sans-serif;line-height:1.8;color:#2a2f3a"><p><b>紹介経由の申し込みがありました</b></p>
+<p>紹介者：${esc(refBy)}${ref_code ? "（専用リンク経由）" : "（フォームに記入）"}<br>申し込み者：${esc(name)} 様（${esc(email)}）<br>${pair ? `同伴者：${esc(pair_name)} 様<br>` : ""}参加する回：${plans.map(esc).join(" / ")}<br>合計：${yen(total)}${session ? "（カード決済待ち→支払い後に確定）" : ""}</p></div>`;
+      try { await sendMail(key, [NOTIFY_TO], `【紹介：${refBy}】${name}様が申し込みました`, note); } catch {}
+    }
   }
   return res.status(200).json({ ok: true, mailed, checkout_url: session ? session.url : null });
 };
