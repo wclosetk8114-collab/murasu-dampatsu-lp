@@ -6,6 +6,15 @@ const MAIL_FROM = process.env.MAIL_FROM || "村主悠真×つっちー 講演会
 const NOTIFY_TO = process.env.NOTIFY_TO || "w.closet.k8114@gmail.com";
 const REPLY_TO = process.env.REPLY_TO || "kyoten.zimukyoku@gmail.com";
 const ZOOM_1104 = "https://us06web.zoom.us/j/81711000222?pwd=lUX2jfPKkPvRgav3HQfdDtWaMmBuja.1";
+const LABEL = {
+  "11/4 オンライン対談": "11/4（水）20:00〜 オンライン対談【オンライン参加・Zoom】",
+  "11/27 講演会": "11/27（金）講演会のみ【会場参加・東京都内】",
+  "11/27 講演会（オンライン）": "11/27（金）講演会のみ【オンライン参加】",
+  "11/27 講演会＋懇親会セット": "11/27（金）講演会＋懇親会セット【会場参加・東京都内】",
+  "12/21 虚点": "12/21（月）虚点【会場参加】",
+  "12/21 虚点（オンライン）": "12/21（月）虚点【オンライン参加】",
+};
+const lab = (p) => LABEL[p] || p;
 const OPENCHAT = "https://line.me/ti/g2/A6vHp2wI6sO00NYHovnl-rYSg7fXp-voM7pEjQ";
 const SITE = "https://murasu-dampatsu-lp.vercel.app";
 
@@ -35,9 +44,9 @@ async function checkout(key, { total, name, email, plans, pair, id }) {
   f.append("line_items[0][price_data][currency]", "jpy");
   f.append("line_items[0][price_data][unit_amount]", String(total));
   f.append("line_items[0][price_data][product_data][name]", "2027年をどう生きるか ─ 村主悠真×つっちー" + (pair ? "（2名）" : ""));
-  f.append("line_items[0][price_data][product_data][description]", plans.join(" / "));
+  f.append("line_items[0][price_data][product_data][description]", plans.map(lab).join(" / "));
   f.append("metadata[name]", name);
-  f.append("metadata[plans]", plans.join(" / "));
+  f.append("metadata[plans]", plans.map(lab).join(" / "));
   f.append("metadata[pair]", pair ? "yes" : "no");
   f.append("metadata[app_ref]", id);
   const r = await fetch("https://api.stripe.com/v1/checkout/sessions", {
@@ -102,7 +111,7 @@ module.exports = async (req, res) => {
   const key = (process.env.RESEND_API_KEY || process.env.resend);
   let mailed = false;
   if (key) {
-    const list = plans.map((p) => `<li>${esc(p)}（${PRICES[p] ? yen(student && HALF.includes(p) ? PRICES[p] / 2 : PRICES[p]) : "無料"}）</li>`).join("");
+    const list = plans.map((p) => `<li>${esc(lab(p))}（${PRICES[p] ? yen(student && HALF.includes(p) ? PRICES[p] / 2 : PRICES[p]) : "無料"}）</li>`).join("");
     const early = isEarly() && plans.some((p) => p.startsWith("11/27"));
     const extra = [free ? "紹介特典（11/27 講演会 無料）" : "", early ? "早割（11/27 1人1,000円オフ）" : "", student ? "学生半額" : "", pair_student ? "同伴者 学生半額" : "", pair ? "ペア割（1人1,500円オフ）" : ""].filter(Boolean).join("／");
     const body = `<div style="font-family:sans-serif;line-height:1.9;color:#2a2f3a;max-width:560px">
@@ -137,7 +146,8 @@ ${plans.includes("11/4 オンライン対談") ? `<div style="border:2px solid #
 <p>イベントページ：<a href="${SITE}">${SITE}</a></p>
 <p>ご不明な点は、このメールにそのまま返信してください。</p>
 <p>つっちー（結び）</p></div>`;
-    const subject = "【お申し込み受付】2027年をどう生きるか ─ 村主悠真 × つっちー";
+    const kinds = [...new Set(plans.map((p) => lab(p).match(/【(.+?)】/)[1].replace(/・.*/, "")))].join("・");
+    const subject = `【お申し込み受付】2027年をどう生きるか ─ 村主悠真 × つっちー（${kinds}）`;
     const to = pair ? [email, pair_email] : [email];
     try { mailed = await sendMail(key, to, subject, body, [NOTIFY_TO]); } catch { mailed = false; }
     // 11/4 オンライン対談の申し込み者に、Zoom案内メールを別送（11/3までは「明日」、11/4当日は「今日」。11/5以降は送らない）
@@ -165,8 +175,8 @@ ${plans.includes("11/4 オンライン対談") ? `<div style="border:2px solid #
     const refBy = ref_code || referrer;
     if (refBy) {
       const note = `<div style="font-family:sans-serif;line-height:1.8;color:#2a2f3a"><p><b>紹介経由の申し込みがありました</b></p>
-<p>紹介者：${esc(refBy)}${ref_code ? "（専用リンク経由）" : "（フォームに記入）"}<br>申し込み者：${esc(name)} 様（${esc(email)}）<br>${pair ? `同伴者：${esc(pair_name)} 様<br>` : ""}参加する回：${plans.map(esc).join(" / ")}<br>合計：${yen(total)}${session ? "（カード決済待ち→支払い後に確定）" : ""}</p></div>`;
-      try { await sendMail(key, [NOTIFY_TO], `【紹介：${refBy}】${name}様が申し込みました`, note); } catch {}
+<p>紹介者：${esc(refBy)}${ref_code ? "（専用リンク経由）" : "（フォームに記入）"}<br>申し込み者：${esc(name)} 様（${esc(email)}）<br>${pair ? `同伴者：${esc(pair_name)} 様<br>` : ""}参加する回：<br>${plans.map((p) => "・" + esc(lab(p))).join("<br>")}<br>合計：${yen(total)}${session ? "（カード決済待ち→支払い後に確定）" : ""}</p></div>`;
+      try { await sendMail(key, [NOTIFY_TO], `【紹介：${refBy}】${name}様が申し込みました（${[...new Set(plans.map((p) => lab(p).match(/【(.+?)】/)[1].replace(/・.*/, "")))].join("・")}）`, note); } catch {}
     }
   }
   return res.status(200).json({ ok: true, mailed, checkout_url: session ? session.url : null });
