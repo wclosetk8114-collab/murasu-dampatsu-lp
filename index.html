@@ -244,7 +244,7 @@ footer{text-align:center;font-size:12px;color:var(--mu);padding:36px 0 56px;back
    <div class="hook">急きょ開催決定。<br>年明けからはなかなかお会いできなくなるため、<br>村主さんの話を直接聴ける貴重な機会です。</div>
    <div class="hcta">
     <a class="btn big" href="#apply">参加を申し込む<span class="arw">→</span></a>
-    <ul class="hpoints"><li class="early">11/4までの申し込みで11/27が<b>1,000円オフ</b></li><li>11/4 オンライン対談は<b>無料</b></li><li><b>1回だけ</b>の参加もOK</li><li>申し込みは<b>1分</b>で完了</li></ul>
+    <ul class="hpoints"><li class="early">11/4（水）までの申し込みで11/27が<b>1,000円オフ</b></li><li>11/4 オンライン対談は<b>無料</b></li><li><b>1回だけ</b>の参加もOK</li><li>申し込みは<b>1分</b>で完了</li></ul>
    </div>
   </div>
   <div class="duo">
@@ -382,7 +382,7 @@ footer{text-align:center;font-size:12px;color:var(--mu);padding:36px 0 56px;back
      <div class="mh">こんな人におすすめ</div><p class="rec">来年をどう生きるか、今のうちに考えておきたい人／時代の変化を不安ではなく手がかりにしたい人</p>
      <div class="mh">当日の流れ</div><ol class="flow"><li>開場・受付</li><li>村主悠真 講演</li><li>質疑応答</li><li>懇親会（登壇者・参加者と直接話せる時間）</li></ol>
     </div>
-    <dl><dt>時間</dt><dd>18:00〜21:00</dd><dt>場所</dt><dd>都内（詳細は追ってお知らせ）／講演会はオンライン参加・アーカイブ配信あり</dd><dt>参加費</dt><dd>講演会 6,600円（会場・オンラインとも／アーカイブ付き） ／ 講演会＋懇親会セット 15,500円（<b>限定30名</b>）<br><span class="early"><b>早割</b>：11/4までのお申し込みで1人1,000円オフ<br></span>※懇親会のみの参加はありません／学生は半額</dd></dl>
+    <dl><dt>時間</dt><dd>18:00〜21:00</dd><dt>場所</dt><dd>都内（詳細は追ってお知らせ）／講演会はオンライン参加・アーカイブ配信あり</dd><dt>参加費</dt><dd>講演会 6,600円（会場・オンラインとも／アーカイブ付き） ／ 講演会＋懇親会セット 15,500円（<b>限定30名</b>）<br><span class="early"><b>早割</b>：11/4（水）までの申し込みで1,000円オフ<br></span>※懇親会のみの参加はありません／学生は半額</dd></dl>
    </div>
   </div>
 
@@ -480,7 +480,7 @@ footer{text-align:center;font-size:12px;color:var(--mu);padding:36px 0 56px;back
    <div class="card rec"><div class="t">11/27 講演会＋懇親会</div><div class="y">15,500<small>円</small></div><div class="n"><b>限定30名</b>／学生 7,750円<br><span class="seat" data-plan="11/27 講演会＋懇親会セット"></span></div></div>
    <div class="card"><div class="t">12/21 虚点</div><div class="y">11,000<small>円</small></div><div class="n">会場（飲み放題・<b>限定20名</b>）／オンライン（アーカイブ付き）<br><span class="seat" data-plan="12/21 虚点"></span></div></div>
   </div>
-  <div class="pair early"><span class="min">早割</span>11/4（水）23:59までのお申し込みで、11/27の講演会・セットが <b>1人1,000円オフ</b></div>
+  <div class="pair early"><span class="min">早割</span>11/4（水）までの申し込みで、11/27が <b>1,000円オフ</b></div>
   <div class="pair"><span class="min">ペア割</span>2人で申し込むと <b>1人1,500円オフ</b>（2人で3,000円オフ）</div>
   <div class="pair"><span class="min">学生割</span>11/27の講演会・セットは <b>学生半額</b></div>
   <p class="note">※ 懇親会のみの参加はありません。懇親会は講演会とのセットでお申し込みください。</p>
@@ -524,7 +524,7 @@ footer{text-align:center;font-size:12px;color:var(--mu);padding:36px 0 56px;back
    <div id="refnote" class="refnote" hidden></div>
    <label>紹介者（いれば）<input name="referrer" id="referrer" maxlength="100" placeholder="紹介してくれた方のお名前"></label>
    <label>メッセージ（任意）<textarea name="message" rows="3" maxlength="1000"></textarea></label>
-   <div class="refnote early">早割期間中です。11/4（水）23:59までのお申し込みで、11/27の講演会・セットが1人1,000円オフになります。</div>
+   <div class="refnote early"><b>早割</b>　11/4（水）までの申し込みで、11/27が<b>1,000円オフ</b></div>
    <div class="total">合計 <b id="sum">0</b> 円<small id="sumnote"></small></div>
    <p class="err" id="err"></p>
    <button class="btn" type="submit" id="sb">この内容で申し込む</button>
@@ -562,7 +562,7 @@ function calc(){
  var c=[].slice.call(f.querySelectorAll('input[name=plan]:checked')).map(function(x){return x.value});
  var stu=document.getElementById('student').checked,pst=document.getElementById('pstudent').checked;
  var a=person(c,stu),p=a,notes=[];
- if(EARLY&&c.some(function(v){return v.indexOf('11/27')===0}))notes.push('早割（1人1,000円オフ）');
+ if(EARLY&&c.some(function(v){return v.indexOf('11/27')===0}))notes.push('早割（1,000円オフ）');
  if(stu)notes.push('学生半額');
  if(pair.checked){var b=person(c,pst);if(pst&&!stu)notes.push('同伴者 学生半額');p=Math.max(0,a-1500)+Math.max(0,b-1500);if(a>0||b>0)notes.push('2人分・ペア割（1人1,500円オフ）');}
  document.getElementById('sum').textContent=p.toLocaleString();
