@@ -5,6 +5,7 @@ const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const MAIL_FROM = process.env.MAIL_FROM || "村主悠真×つっちー 講演会事務局 <hello@musubi-kakeizu.com>";
 const NOTIFY_TO = process.env.NOTIFY_TO || "w.closet.k8114@gmail.com";
 const REPLY_TO = process.env.REPLY_TO || "kyoten.zimukyoku@gmail.com";
+const ZOOM_1104 = "https://us06web.zoom.us/j/81711000222?pwd=lUX2jfPKkPvRgav3HQfdDtWaMmBuja.1";
 const OPENCHAT = "https://line.me/ti/g2/A6vHp2wI6sO00NYHovnl-rYSg7fXp-voM7pEjQ";
 const SITE = "https://murasu-dampatsu-lp.vercel.app";
 
@@ -114,6 +115,13 @@ ${referrer ? `<b>紹介者</b><br>${esc(referrer)}<br><br>` : ""}
 <b>合計</b>：${yen(total)}${pair ? "（2人分）" : ""}${extra ? `<br><small>${extra} 適用</small>` : ""}
 </div>
 ${session ? `<p><b>お支払いについて</b><br>お申し込みのあと表示されたカード決済の画面でお支払いください。まだお済みでない場合は、下のリンクから24時間以内にお支払いいただけます。<br><a href="${session.url}">お支払いページを開く</a></p>` : ""}<p>会場の詳細は、あらためてご連絡します。（11/27・12/21はどちらも18:00〜21:00）</p>
+${plans.includes("11/4 オンライン対談") ? `<div style="border:2px solid #2d8cff;background:#f2f8ff;padding:16px 20px;margin:16px 0">
+<b>11/4（水）20:00〜 オンライン対談の参加URL（Zoom）</b><br>
+当日はこちらから入室してください。<br>
+<a href="${ZOOM_1104}" style="display:inline-block;margin-top:10px;background:#2d8cff;color:#fff;text-decoration:none;padding:10px 22px;border-radius:2px">Zoomに参加する</a><br>
+<small>${ZOOM_1104}</small><br>
+<small>ミーティングID：817 1100 0222</small>
+</div>` : ""}
 <div style="border:1px solid #06c755;background:#f3fcf6;padding:16px 20px;margin:16px 0">
 <b>LINEオープンチャットにご参加ください</b><br>
 「村主悠真×つっちー｜11/4 20時〜オンライン｜11/27夜 講演会＆懇親会｜12/21夜 虚点」<br>
