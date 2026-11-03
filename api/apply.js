@@ -121,6 +121,11 @@ ${session ? `<p><b>お支払いについて</b><br>お申し込みのあと表�
 <a href="${OPENCHAT}" style="display:inline-block;margin-top:10px;background:#06c755;color:#fff;text-decoration:none;padding:10px 22px;border-radius:2px">オープンチャットに参加する</a><br>
 <small>${OPENCHAT}</small>
 </div>
+<div style="border:1px solid #d8cdb6;padding:16px 20px;margin:16px 0">
+<b>■ 村主悠真 各種プロジェクト</b><br>
+当日までに見ておくと、お話の理解がぐっと深まるのでおすすめです。<br>今のあなたに響く入口から、村主悠真の世界に触れてみてください。
+<ol style="margin:8px 0 0;padding-left:1.4em"><li style="margin:6px 0">Λ瞑想・θ回廊などの村主悠真関連PJ告知用ΩLINE<br><a href="https://index.yuma-muranushi.jp/line/open/BeSzTQHJdaun">https://index.yuma-muranushi.jp/line/open/BeSzTQHJdaun</a></li><li style="margin:6px 0">虚点・講演会公式LINE（村主プロジェクト診断や全国の開催情報を配信中）<br><a href="https://lin.ee/PJS8mvNW">https://lin.ee/PJS8mvNW</a></li><li style="margin:6px 0">村主悠真公式YouTubeチャンネル<br><a href="https://youtu.be/A8_ahHcLG1Y?si=hSzRYUt3I7mxv4r5">https://youtu.be/A8_ahHcLG1Y?si=hSzRYUt3I7mxv4r5</a></li><li style="margin:6px 0">虚次元メディア『視座プラス』（構造視力を養うメディア）<br><a href="https://iii-iii.com/i.media/">https://iii-iii.com/i.media/</a></li><li style="margin:6px 0">村主悠真論文サイト（虚数拡張理論を基に論文を更新中）<br><a href="https://iii-iii.com/i.fragmenta/">https://iii-iii.com/i.fragmenta/</a></li><li style="margin:6px 0">iPeace（世界平和ブランド）<br><a href="https://iii-iii.com/i.peace/">https://iii-iii.com/i.peace/</a></li></ol>
+</div>
 <p>イベントページ：<a href="${SITE}">${SITE}</a></p>
 <p>ご不明な点は、このメールにそのまま返信してください。</p>
 <p>つっちー（結び）</p></div>`;
