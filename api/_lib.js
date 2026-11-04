@@ -13,8 +13,8 @@ const LEGACY = { "11/27 講演会": 5500, "11/27 講演会（オンライン）"
 const yen = (n) => Number(n).toLocaleString("ja-JP") + "円";
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-// 早割：2026/11/4 23:59（日本時間）までの申し込みは、11/27の講演会・セットが1人1,000円オフ
-const EARLY_END = new Date("2026-11-04T23:59:59+09:00");
+// 早割：2026/11/6 23:59（日本時間）までの申し込みは、11/27の講演会・セットが1人1,000円オフ
+const EARLY_END = new Date("2026-11-06T23:59:59+09:00");
 const EARLY_OFF = 1000;
 const isEarly = (d) => (d ? new Date(d) : new Date()) <= EARLY_END;
 function person(plans, stu, legacy, early) {
