@@ -23,6 +23,7 @@ const OPENCHAT = "https://line.me/ti/g2/A6vHp2wI6sO00NYHovnl-rYSg7fXp-voM7pEjQ";
 const SITE = "https://murasu-dampatsu-lp.vercel.app";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const crypto = require("crypto");
 const s = (v, n) => (typeof v === "string" ? v.trim().slice(0, n) : "");
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const yen = (n) => n.toLocaleString("ja-JP") + "円";
@@ -115,7 +116,8 @@ module.exports = async (req, res) => {
     if (!session || session._err) return res.status(502).json({ error: "stripe", code: session && session._err, detail: session && session._msg });
   }
 
-  const row = { event_key: "murasu-2026winter", name, email, plans, pair, pair_name: pair_name || null, pair_email: pair_email || null,
+  const pay_token = crypto.randomUUID();
+  const row = { pay_token, event_key: "murasu-2026winter", name, email, plans, pair, pair_name: pair_name || null, pair_email: pair_email || null,
     referrer: referrer || null, ref_code: ref_code || null, message: message || null, total, student, pair_student, free_by_referral: free, referral_discount: discount, stripe_session_id: session ? session.id : null };
   const ins = await fetch(SB_URL, { method: "POST", headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(row) });
   if (!ins.ok) return res.status(500).json({ error: "save" });
@@ -129,13 +131,19 @@ module.exports = async (req, res) => {
     const body = `<div style="font-family:sans-serif;line-height:1.9;color:#2a2f3a;max-width:560px">
 <p>${esc(name)} 様</p>
 <p>「2027年をどう生きるか ─ 村主悠真 × つっちー」にお申し込みいただき、ありがとうございます。<br>以下の内容で受け付けました。</p>
+${session ? `<div style="border:2px solid #b8963e;background:#fbf8f1;padding:18px 20px;margin:16px 0;text-align:center">
+<b style="font-size:16px">お支払いがまだお済みでない方へ</b><br>
+<span style="font-size:14px">下のボタンから、カードでお支払いいただけます。</span><br>
+<a href="${SITE}/api/pay?t=${pay_token}" style="display:inline-block;margin:12px 0 6px;background:#16305a;color:#fff;text-decoration:none;padding:14px 32px;border-radius:4px;font-size:17px;font-weight:bold">カードで支払う（${yen(total)}）</a><br>
+<small style="color:#666">ボタンはいつ押しても使えます。お支払いが済んだ方は、このご案内は不要です。<br>お支払いが完了するまで、お申し込みは確定しません。</small>
+</div>` : ""}
 <div style="border:1px solid #d8cdb6;padding:16px 20px;margin:16px 0">
 <b>参加する回</b><ul style="margin:6px 0 10px">${list}</ul>
 ${pair ? `<b>一緒に参加する方</b><br>${esc(pair_name)} 様<br><br>` : ""}
 ${referrer ? `<b>紹介者</b><br>${esc(referrer)}<br><br>` : ""}
 <b>合計</b>：${yen(total)}${pair ? "（2人分）" : ""}${extra ? `<br><small>${extra} 適用</small>` : ""}
 </div>
-${session ? `<p><b>お支払いについて</b><br>お申し込みのあと表示されたカード決済の画面でお支払いください。まだお済みでない場合は、下のリンクから<b>30分以内</b>にお支払いください。<br><a href="${session.url}">お支払いページを開く</a><br><small>※ 30分を過ぎるとリンクが使えなくなります。その場合は、お手数ですが<a href="${SITE}">イベントページ</a>からもう一度お申し込みください（お支払いが済んでいない申し込みに請求されることはありません）。</small></p>` : ""}${plans.includes(ARCH) ? `<p><b>11/4 対談アーカイブについて</b><br>お支払いを確認したあと、アーカイブのURLをメールでお送りします。</p>` : ""}<p>会場の詳細は、あらためてご連絡します。（11/27・12/21はどちらも18:00〜21:00）</p>
+${plans.includes(ARCH) ? `<p><b>11/4 対談アーカイブについて</b><br>お支払いを確認したあと、アーカイブのURLをメールでお送りします。</p>` : ""}<p>会場の詳細は、あらためてご連絡します。（11/27・12/21はどちらも18:00〜21:00）</p>
 ${plans.includes("11/4 オンライン対談") ? `<div style="border:2px solid #2d8cff;background:#f2f8ff;padding:16px 20px;margin:16px 0">
 <b>11/4（水）20:00〜 オンライン対談の参加URL（Zoom）</b><br>
 当日はこちらから入室してください。<br>
