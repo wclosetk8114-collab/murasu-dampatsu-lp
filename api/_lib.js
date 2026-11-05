@@ -87,18 +87,25 @@ async function runReferralRefunds() {
   const list = (await rpc("adm_refund_candidates", {})) || [];
   for (const a of list) {
     const legacy = (a.plans || []).includes("11/27 懇親会") || new Date(a.created_at) < new Date("2026-11-03T00:00:00+09:00");
-    const ownPaid = a.pair ? Math.max(0, person(a.plans || [], a.student, legacy, isEarly(a.created_at)) - 1500) : a.total;
-    const own = Math.min(lectureValue(a.plans, a.student), ownPaid);
-    if (!own) continue;
+    const disc = a.referral_discount || 0, refunded = a.refunded_amount || 0;
+    const ownFull = a.pair ? Math.max(0, person(a.plans || [], a.student, legacy, isEarly(a.created_at)) - 1500) : (a.total || 0) + disc;
+    const hasPass = (a.plans || []).some((k) => PASSES.includes(k));
+    const full = hasPass && a.referred >= 4;
+    const target = full ? ownFull : Math.min(lectureValue(a.plans, a.student), ownFull);
+    const delta = target - disc - refunded;
+    if (delta <= 0 || !a.stripe_session_id) continue;
     const s = await stripe("GET", "checkout/sessions/" + encodeURIComponent(a.stripe_session_id));
     if (!s || !s.payment_intent) continue;
-    const refundAmt = Math.min(own, s.amount_total || own);
-    const rf = await stripe("POST", "refunds", { payment_intent: s.payment_intent, amount: String(refundAmt), "metadata[reason]": "referral_free" });
+    const refundAmt = Math.min(delta, (s.amount_total || 0) - refunded);
+    if (refundAmt <= 0) continue;
+    const rf = await stripe("POST", "refunds", { payment_intent: s.payment_intent, amount: String(refundAmt), "metadata[reason]": full ? "referral_free_pass" : "referral_free" });
     if (!rf || !rf.id) continue;
     await rpc("adm_mark_refunded", { p_id: a.id, p_amount: refundAmt, p_refund: rf.id });
+    const what = full ? "冬の通し券の参加費" : "11/27 講演会の参加費";
+    const after = full ? "（通し券が無料になります）" : "（講演会が無料になります）";
     await sendMail([a.email], "【紹介特典】参加費を返金しました ─ 2027年をどう生きるか",
       `<div style="font-family:sans-serif;line-height:1.9;color:#2a2f3a;max-width:560px"><p>${esc(a.name)} 様</p>
-<p>お知り合いを${a.referred}名ご紹介いただき、ありがとうございます。<br>紹介特典として、11/27 講演会の参加費 <b>${yen(refundAmt)}</b> を返金しました（講演会が無料になります）。</p>
+<p>お知り合いを${a.referred}名ご紹介いただき、ありがとうございます。<br>紹介特典として、${what} <b>${yen(refundAmt)}</b> を返金しました${after}。</p>
 <p>カード会社によって、返金の反映まで数日〜1か月ほどかかる場合があります。</p>
 <p>当日お会いできるのを楽しみにしています。</p><p>つっちー（結び）</p></div>`, [NOTIFY_TO]).catch(() => {});
     done.push({ id: a.id, amount: refundAmt });

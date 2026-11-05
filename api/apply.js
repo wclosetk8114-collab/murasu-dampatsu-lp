@@ -26,13 +26,15 @@ const s = (v, n) => (typeof v === "string" ? v.trim().slice(0, n) : "");
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const yen = (n) => n.toLocaleString("ja-JP") + "円";
 
-function calc(plans, pair, stu, pstu, free) {
+function calc(plans, pair, stu, pstu, referred) {
   const set = plans.includes("11/27 講演会＋懇親会セット");
   const early = isEarly();
-  const a = Math.max(0, person(plans, stu, false, early) - (free ? lectureValue(plans, stu) : 0));
-  if (!pair) return { total: a, set };
-  const b = person(plans, pstu, false, early);
-  return { total: Math.max(0, a - 1500) + Math.max(0, b - 1500), set };
+  const full = person(plans, stu, false, early);
+  const own = pair ? Math.max(0, full - 1500) : full;
+  const hasPass = plans.some((k) => PASSES.includes(k));
+  const discount = hasPass && referred >= 4 ? own : referred >= 2 ? Math.min(lectureValue(plans, stu), own) : 0;
+  const partner = pair ? Math.max(0, person(plans, pstu, false, early) - 1500) : 0;
+  return { total: own - discount + partner, set, discount, fullPass: hasPass && referred >= 4 && discount > 0 };
 }
 
 async function checkout(key, { total, name, email, plans, pair, id }) {
@@ -96,9 +98,10 @@ module.exports = async (req, res) => {
     if (full.length) return res.status(409).json({ error: "full", plans: full, remaining: rem });
   } catch {}
   // 紹介特典：支払い済みの人を2人以上紹介した人は11/27講演会が無料（ページには書かない）
-  let free = false;
-  try { free = lectureValue(plans, student) > 0 && (await rpc("adm_paid_referral_count", { p_name: name })) >= 2; } catch {}
-  const { total, set } = calc(plans, pair, student, pair_student, free);
+  let referred = 0;
+  try { referred = Number(await rpc("adm_paid_referral_count", { p_name: name })) || 0; } catch {}
+  const { total, set, discount, fullPass } = calc(plans, pair, student, pair_student, referred);
+  const free = discount > 0;
 
   // 有料ならStripeの決済画面をつくる（STRIPE_SECRET_KEY があるとき）
   let session = null;
@@ -109,7 +112,7 @@ module.exports = async (req, res) => {
   }
 
   const row = { event_key: "murasu-2026winter", name, email, plans, pair, pair_name: pair_name || null, pair_email: pair_email || null,
-    referrer: referrer || null, ref_code: ref_code || null, message: message || null, total, student, pair_student, free_by_referral: free, stripe_session_id: session ? session.id : null };
+    referrer: referrer || null, ref_code: ref_code || null, message: message || null, total, student, pair_student, free_by_referral: free, referral_discount: discount, stripe_session_id: session ? session.id : null };
   const ins = await fetch(SB_URL, { method: "POST", headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(row) });
   if (!ins.ok) return res.status(500).json({ error: "save" });
 
@@ -118,7 +121,7 @@ module.exports = async (req, res) => {
   if (key) {
     const list = plans.map((p) => `<li>${esc(lab(p))}（${PRICES[p] ? yen(student && HALF.includes(p) ? PRICES[p] / 2 : PRICES[p]) : "無料"}）</li>`).join("");
     const early = isEarly() && plans.some((p) => p.startsWith("11/27"));
-    const extra = [free ? "紹介特典（11/27 講演会 無料）" : "", early ? "早割（11/27 1人1,000円オフ）" : "", student ? "学生半額" : "", pair_student ? "同伴者 学生半額" : "", pair ? "ペア割（1人1,500円オフ）" : ""].filter(Boolean).join("／");
+    const extra = [free ? (fullPass ? "紹介特典（通し券 無料）" : "紹介特典（11/27 講演会 無料）") : "", early ? "早割（11/27 1人1,000円オフ）" : "", student ? "学生半額" : "", pair_student ? "同伴者 学生半額" : "", pair ? "ペア割（1人1,500円オフ）" : ""].filter(Boolean).join("／");
     const body = `<div style="font-family:sans-serif;line-height:1.9;color:#2a2f3a;max-width:560px">
 <p>${esc(name)} 様</p>
 <p>「2027年をどう生きるか ─ 村主悠真 × つっちー」にお申し込みいただき、ありがとうございます。<br>以下の内容で受け付けました。</p>
