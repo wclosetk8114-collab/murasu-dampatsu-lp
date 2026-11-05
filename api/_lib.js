@@ -6,7 +6,8 @@ const NOTIFY_TO = process.env.NOTIFY_TO || "w.closet.k8114@gmail.com";
 const REPLY_TO = process.env.REPLY_TO || "kyoten.zimukyoku@gmail.com";
 const SITE = "https://murasu-dampatsu-lp.vercel.app";
 const PRICES = { "11/4 オンライン対談": 0, "11/27 講演会": 6600, "11/27 講演会（オンライン）": 6600, "11/27 講演会＋懇親会セット": 15500, "12/21 虚点": 11000, "12/21 虚点（オンライン）": 11000,
-  "冬の通し券（会場）": 24400, "冬の通し券 ライト（会場）": 15800, "冬の通し券 ライト（オンライン）": 15800 };
+  "冬の通し券（会場）": 24400, "冬の通し券 ライト（会場）": 15800, "冬の通し券 ライト（オンライン）": 15800, "11/4 対談アーカイブ": 1000 };
+const ARCH = "11/4 対談アーカイブ", ARCH_PRICE = 1000, ARCH_URL = "https://youtu.be/eV8eeX3alE0";
 const PASSES = ["冬の通し券（会場）", "冬の通し券 ライト（会場）", "冬の通し券 ライト（オンライン）"];
 const HALF = ["11/27 講演会", "11/27 講演会（オンライン）", "11/27 講演会＋懇親会セット"].concat(PASSES);
 const LIMITS = { "11/27 講演会＋懇親会セット": 30, "12/21 虚点": 20 };
@@ -25,7 +26,7 @@ const isEarly = (d) => (d ? new Date(d) : new Date()) <= EARLY_END;
 function person(plans, stu, legacy, early) {
   const T = legacy ? Object.assign({}, PRICES, LEGACY) : PRICES;
   const H = legacy ? HALF.concat(["11/27 懇親会"]) : HALF;
-  let p = plans.reduce((a, k) => a + (stu && H.includes(k) ? (T[k] || 0) / 2 : T[k] || 0), 0);
+  let p = plans.filter((k) => k !== ARCH).reduce((a, k) => a + (stu && H.includes(k) ? (T[k] || 0) / 2 : T[k] || 0), 0);
   if (legacy && plans.includes("11/27 講演会") && plans.includes("11/27 懇親会")) p -= stu ? 750 : 1500;
   if (early && !legacy && plans.some((k) => k.startsWith("11/27"))) p -= EARLY_OFF;
   return Math.max(0, p);
@@ -73,11 +74,34 @@ async function sendMail(to, subject, html, bcc) {
   return r.ok;
 }
 
+// アーカイブ購入者に、支払い確認後にURLを送る（1回だけ）
+async function sendArchive(s) {
+  const m = s.metadata || {};
+  if (m.archive !== "yes" || m.archive_sent === "yes") return;
+  await stripe("POST", "checkout/sessions/" + encodeURIComponent(s.id), { "metadata[archive_sent]": "yes" });
+  const to = [s.customer_email || (s.customer_details && s.customer_details.email)].concat(m.pair_email ? [m.pair_email] : []).filter(Boolean);
+  if (!to.length) return;
+  await sendMail(to, "【アーカイブのご案内】11/4 村主悠真×つっちー オンライン対談",
+    `<div style="font-family:sans-serif;line-height:1.9;color:#2a2f3a;max-width:560px">
+<p>${esc(m.name || "")} 様</p>
+<p>こんにちは、つっちーです。<br>11/4 オンライン対談のアーカイブをお申し込みいただき、ありがとうございます。<br>お支払いを確認しました。</p>
+<div style="border:2px solid #b8963e;background:#fbf8f1;padding:16px 20px;margin:16px 0">
+<b>▼ アーカイブはこちら</b><br>
+<a href="${ARCH_URL}" style="display:inline-block;margin-top:10px;background:#16305a;color:#fff;text-decoration:none;padding:10px 22px;border-radius:2px">アーカイブを見る</a><br>
+<small>${ARCH_URL}</small>
+</div>
+<p>※ このURLは、ご購入いただいた方だけのご案内です。ほかの方への共有はご遠慮ください。</p>
+<p>村主さんがどんな人生を歩み、いま何を見ているのか。そして2027年に向けて、時代はどう変わっていくのか。<br>ゆっくり聴いていただけたらうれしいです。</p>
+<p>この続きは、11/27の講演会で、村主さんが「時代の構造」から読み解きます。<br>よろしければ、こちらもご覧ください。<br><a href="${SITE}">${SITE}</a></p>
+<p>つっちー（結び）</p></div>`, [NOTIFY_TO]);
+}
+
 // 決済済みかStripeに確認して、済んでいればDBに記録
 async function confirmSession(sessionId) {
   const s = await stripe("GET", "checkout/sessions/" + encodeURIComponent(sessionId));
   if (!s || s.payment_status !== "paid") return false;
   await rpc("adm_mark_paid", { p_session: sessionId });
+  await sendArchive(s).catch(() => {});
   return true;
 }
 
@@ -88,7 +112,7 @@ async function runReferralRefunds() {
   for (const a of list) {
     const legacy = (a.plans || []).includes("11/27 懇親会") || new Date(a.created_at) < new Date("2026-11-03T00:00:00+09:00");
     const disc = a.referral_discount || 0, refunded = a.refunded_amount || 0;
-    const ownFull = a.pair ? Math.max(0, person(a.plans || [], a.student, legacy, isEarly(a.created_at)) - 1500) : (a.total || 0) + disc;
+    const ownFull = a.pair ? Math.max(0, person(a.plans || [], a.student, legacy, isEarly(a.created_at)) - 1500) : (a.total || 0) + disc - ((a.plans || []).includes(ARCH) ? ARCH_PRICE : 0);
     const hasPass = (a.plans || []).some((k) => PASSES.includes(k));
     const full = hasPass && a.referred >= 4;
     const target = full ? ownFull : Math.min(lectureValue(a.plans, a.student), ownFull);
@@ -113,4 +137,4 @@ async function runReferralRefunds() {
   return done;
 }
 
-module.exports = { SB, SB_KEY, SITE, PRICES, HALF, LIMITS, PASSES, NEEDS, remaining, isEarly, EARLY_OFF, lectureValue, yen, esc, person, rpc, stripe, sendMail, confirmSession, runReferralRefunds };
+module.exports = { ARCH, ARCH_PRICE, SB, SB_KEY, SITE, PRICES, HALF, LIMITS, PASSES, NEEDS, remaining, isEarly, EARLY_OFF, lectureValue, yen, esc, person, rpc, stripe, sendMail, confirmSession, runReferralRefunds };
