@@ -1,4 +1,4 @@
-const { rpc, PRICES, HALF, LIMITS, remaining, person, isEarly, EARLY_OFF, lectureValue } = require("./_lib");
+const { rpc, PRICES, HALF, LIMITS, PASSES, NEEDS, remaining, person, isEarly, EARLY_OFF, lectureValue } = require("./_lib");
 // 申し込み受付：Supabaseに保存 → 確認メール送信（RESEND_API_KEY があるとき）
 const SB_URL = "https://cczerefroeveoobdlhoj.supabase.co/rest/v1/event_applications";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjemVyZWZyb2V2ZW9vYmRsaG9qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4OTg1NjYsImV4cCI6MjEwMzQ3NDU2Nn0.KsQtf2gYD5EOFYB9Jq-uH8pHI1dVIrUH99J0qkUJy54";
@@ -13,6 +13,9 @@ const LABEL = {
   "11/27 講演会＋懇親会セット": "11/27（金）講演会＋懇親会セット【会場参加・東京都内】",
   "12/21 虚点": "12/21（月）虚点【会場参加・東京都内】",
   "12/21 虚点（オンライン）": "12/21（月）虚点【オンライン参加】",
+  "冬の通し券（会場）": "冬の通し券：11/27 講演会＋懇親会 ＋ 12/21 虚点【会場参加・東京都内】",
+  "冬の通し券 ライト（会場）": "冬の通し券 ライト：11/27 講演会 ＋ 12/21 虚点【会場参加・東京都内】",
+  "冬の通し券 ライト（オンライン）": "冬の通し券 ライト：11/27 講演会 ＋ 12/21 虚点【オンライン参加】",
 };
 const lab = (p) => LABEL[p] || p;
 const OPENCHAT = "https://line.me/ti/g2/A6vHp2wI6sO00NYHovnl-rYSg7fXp-voM7pEjQ";
@@ -80,6 +83,8 @@ module.exports = async (req, res) => {
   const message = s(b.message, 1000);
   if (!name || !EMAIL_RE.test(email) || !plans.length) return res.status(400).json({ error: "input" });
   if (pair && (!pair_name || !EMAIL_RE.test(pair_email))) return res.status(400).json({ error: "pair" });
+  if (plans.filter((p) => PASSES.includes(p)).length > 1) return res.status(400).json({ error: "input" });
+  if (plans.some((p) => PASSES.includes(p)) && plans.some((p) => p.startsWith("11/27") || p.startsWith("12/21"))) return res.status(400).json({ error: "input" });
   if (plans.filter((p) => p.startsWith("11/27")).length > 1) return res.status(400).json({ error: "input" });
   if (plans.filter((p) => p.startsWith("12/21")).length > 1) return res.status(400).json({ error: "input" });
   const student = !!b.student, pair_student = pair && !!b.pair_student;
@@ -87,7 +92,7 @@ module.exports = async (req, res) => {
   const need = pair ? 2 : 1;
   try {
     const rem = await remaining();
-    const full = plans.filter((p) => p in LIMITS && rem[p] < need);
+    const full = plans.filter((p) => (NEEDS[p] || []).some((k) => rem[k] < need));
     if (full.length) return res.status(409).json({ error: "full", plans: full, remaining: rem });
   } catch {}
   // 紹介特典：支払い済みの人を2人以上紹介した人は11/27講演会が無料（ページには書かない）

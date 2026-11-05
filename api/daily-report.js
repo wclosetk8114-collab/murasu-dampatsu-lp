@@ -5,10 +5,12 @@ const yen = (v) => Number(v).toLocaleString("ja-JP") + "円";
 
 function buildText(s, rem) {
   const r = s.plans || [];
-  const setN = n(r, "11/27 講演会＋懇親会セット"), lecV = n(r, "11/27 講演会"), lecO = n(r, "11/27 講演会（オンライン）");
-  const kyV = n(r, "12/21 虚点"), kyO = n(r, "12/21 虚点（オンライン）");
-  const new1127 = n(r, "11/27 講演会＋懇親会セット", "new24") + n(r, "11/27 講演会", "new24") + n(r, "11/27 講演会（オンライン）", "new24");
-  const new1221 = n(r, "12/21 虚点", "new24") + n(r, "12/21 虚点（オンライン）", "new24");
+  const pv = n(r, "冬の通し券（会場）"), plv = n(r, "冬の通し券 ライト（会場）"), plo = n(r, "冬の通し券 ライト（オンライン）");
+  const npass = n(r, "冬の通し券（会場）", "new24") + n(r, "冬の通し券 ライト（会場）", "new24") + n(r, "冬の通し券 ライト（オンライン）", "new24");
+  const setN = n(r, "11/27 講演会＋懇親会セット") + pv, lecV = n(r, "11/27 講演会") + plv, lecO = n(r, "11/27 講演会（オンライン）") + plo;
+  const kyV = n(r, "12/21 虚点") + pv + plv, kyO = n(r, "12/21 虚点（オンライン）") + plo;
+  const new1127 = n(r, "11/27 講演会＋懇親会セット", "new24") + n(r, "11/27 講演会", "new24") + n(r, "11/27 講演会（オンライン）", "new24") + npass;
+  const new1221 = n(r, "12/21 虚点", "new24") + n(r, "12/21 虚点（オンライン）", "new24") + npass;
   const unpaid = r.reduce((a, x) => a + (x.unpaid || 0), 0);
   const d = new Date(Date.now() + 9 * 3600e3);
   const lines = [
@@ -23,6 +25,9 @@ function buildText(s, rem) {
     `■ 12/21 虚点　合計 ${kyV + kyO}名（前日比 +${new1221}）`,
     `・会場 ${kyV}名　残り${rem["12/21 虚点"]}席`,
     `・オンライン ${kyO}名`,
+    ``,
+    `■ 冬の通し券　合計 ${pv + plv + plo}名（上の人数に含む）`,
+    `・通し券（会場）${pv}名／ライト 会場 ${plv}名／ライト オンライン ${plo}名`,
     ``,
     `■ 11/4 オンライン対談　${n(r, "11/4 オンライン対談")}名`,
     ``,

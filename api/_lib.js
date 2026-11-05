@@ -5,9 +5,14 @@ const MAIL_FROM = process.env.MAIL_FROM || "村主悠真×つっちー 講演会
 const NOTIFY_TO = process.env.NOTIFY_TO || "w.closet.k8114@gmail.com";
 const REPLY_TO = process.env.REPLY_TO || "kyoten.zimukyoku@gmail.com";
 const SITE = "https://murasu-dampatsu-lp.vercel.app";
-const PRICES = { "11/4 オンライン対談": 0, "11/27 講演会": 6600, "11/27 講演会（オンライン）": 6600, "11/27 講演会＋懇親会セット": 15500, "12/21 虚点": 11000, "12/21 虚点（オンライン）": 11000 };
-const HALF = ["11/27 講演会", "11/27 講演会（オンライン）", "11/27 講演会＋懇親会セット"];
+const PRICES = { "11/4 オンライン対談": 0, "11/27 講演会": 6600, "11/27 講演会（オンライン）": 6600, "11/27 講演会＋懇親会セット": 15500, "12/21 虚点": 11000, "12/21 虚点（オンライン）": 11000,
+  "冬の通し券（会場）": 24400, "冬の通し券 ライト（会場）": 15800, "冬の通し券 ライト（オンライン）": 15800 };
+const PASSES = ["冬の通し券（会場）", "冬の通し券 ライト（会場）", "冬の通し券 ライト（オンライン）"];
+const HALF = ["11/27 講演会", "11/27 講演会（オンライン）", "11/27 講演会＋懇親会セット"].concat(PASSES);
 const LIMITS = { "11/27 講演会＋懇親会セット": 30, "12/21 虚点": 20 };
+// 定員の数え方：通し券（会場）はセットと虚点会場を1席ずつ、ライト（会場）は虚点会場を1席使う
+const SEAT_USERS = { "11/27 講演会＋懇親会セット": ["11/27 講演会＋懇親会セット", "冬の通し券（会場）"], "12/21 虚点": ["12/21 虚点", "冬の通し券（会場）", "冬の通し券 ライト（会場）"] };
+const NEEDS = { "冬の通し券（会場）": ["11/27 講演会＋懇親会セット", "12/21 虚点"], "冬の通し券 ライト（会場）": ["12/21 虚点"], "11/27 講演会＋懇親会セット": ["11/27 講演会＋懇親会セット"], "12/21 虚点": ["12/21 虚点"] };
 // 旧料金（2026-11-03より前の申し込み）の返金計算用
 const LEGACY = { "11/27 講演会": 5500, "11/27 講演会（オンライン）": 5500, "11/27 懇親会": 11000 };
 const yen = (n) => Number(n).toLocaleString("ja-JP") + "円";
@@ -26,15 +31,16 @@ function person(plans, stu, legacy, early) {
   return Math.max(0, p);
 }
 // 紹介特典：支払い済みの人を2人以上紹介した人は「11/27 講演会」が無料（セットの人は講演会分を引く）
-const LECTURE_PLANS = ["11/27 講演会", "11/27 講演会（オンライン）", "11/27 講演会＋懇親会セット"];
+const LECTURE_PLANS = ["11/27 講演会", "11/27 講演会（オンライン）", "11/27 講演会＋懇親会セット"].concat(PASSES);
 function lectureValue(plans, stu) {
   return (plans || []).some((k) => LECTURE_PLANS.includes(k)) ? (stu ? 3300 : 6600) : 0;
 }
 async function remaining() {
   const out = {};
   for (const k of Object.keys(LIMITS)) {
-    let used = 0; try { used = await rpc("adm_plan_count", { p_plan: k }); } catch {}
-    out[k] = Math.max(0, LIMITS[k] - (used || 0));
+    let used = 0;
+    for (const u of SEAT_USERS[k] || [k]) { try { used += (await rpc("adm_plan_count", { p_plan: u })) || 0; } catch {} }
+    out[k] = Math.max(0, LIMITS[k] - used);
   }
   return out;
 }
@@ -100,4 +106,4 @@ async function runReferralRefunds() {
   return done;
 }
 
-module.exports = { SB, SB_KEY, SITE, PRICES, HALF, LIMITS, remaining, isEarly, EARLY_OFF, lectureValue, yen, esc, person, rpc, stripe, sendMail, confirmSession, runReferralRefunds };
+module.exports = { SB, SB_KEY, SITE, PRICES, HALF, LIMITS, PASSES, NEEDS, remaining, isEarly, EARLY_OFF, lectureValue, yen, esc, person, rpc, stripe, sendMail, confirmSession, runReferralRefunds };
