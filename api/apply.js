@@ -1,4 +1,4 @@
-const { ARCH, ARCH_PRICE, rpc, PRICES, HALF, LIMITS, PASSES, NEEDS, remaining, person, isEarly, EARLY_OFF, lectureValue } = require("./_lib");
+const { archiveMail, ARCH, ARCH_PRICE, rpc, PRICES, HALF, LIMITS, PASSES, NEEDS, remaining, person, isEarly, EARLY_OFF, lectureValue } = require("./_lib");
 // 申し込み受付：Supabaseに保存 → 確認メール送信（RESEND_API_KEY があるとき）
 const SB_URL = "https://cczerefroeveoobdlhoj.supabase.co/rest/v1/event_applications";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjemVyZWZyb2V2ZW9vYmRsaG9qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4OTg1NjYsImV4cCI6MjEwMzQ3NDU2Nn0.KsQtf2gYD5EOFYB9Jq-uH8pHI1dVIrUH99J0qkUJy54";
@@ -28,6 +28,8 @@ const s = (v, n) => (typeof v === "string" ? v.trim().slice(0, n) : "");
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const yen = (n) => n.toLocaleString("ja-JP") + "円";
 
+// 11/27（講演会・セット・通し券）を申し込んだ人は、11/4アーカイブが無料でついてくる
+const gets1127 = (plans) => plans.some((k) => k.startsWith("11/27") || PASSES.includes(k));
 function calc(plans, pair, stu, pstu, referred) {
   const set = plans.includes("11/27 講演会＋懇親会セット");
   const early = isEarly();
@@ -36,7 +38,7 @@ function calc(plans, pair, stu, pstu, referred) {
   const hasPass = plans.some((k) => PASSES.includes(k));
   const discount = hasPass && referred >= 4 ? own : referred >= 2 ? Math.min(lectureValue(plans, stu), own) : 0;
   const partner = pair ? Math.max(0, person(plans, pstu, false, early) - 1500) : 0;
-  const arch = plans.includes(ARCH) ? ARCH_PRICE * (pair ? 2 : 1) : 0;
+  const arch = plans.includes(ARCH) && !gets1127(plans) ? ARCH_PRICE * (pair ? 2 : 1) : 0;
   return { total: own - discount + partner + arch, set, discount, fullPass: hasPass && referred >= 4 && discount > 0 };
 }
 
@@ -57,7 +59,7 @@ async function checkout(key, { total, name, email, plans, pair, pair_email, id }
   f.append("metadata[plans]", plans.map(lab).join(" / "));
   f.append("metadata[pair]", pair ? "yes" : "no");
   f.append("metadata[app_ref]", id);
-  if (plans.includes(ARCH)) f.append("metadata[archive]", "yes");
+  if (plans.includes(ARCH) || gets1127(plans)) f.append("metadata[archive]", "yes");
   if (pair && pair_email) f.append("metadata[pair_email]", pair_email);
   const r = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST", headers: { Authorization: "Bearer " + key, "Content-Type": "application/x-www-form-urlencoded" }, body: f.toString(),
@@ -122,10 +124,11 @@ module.exports = async (req, res) => {
   const ins = await fetch(SB_URL, { method: "POST", headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(row) });
   if (!ins.ok) return res.status(500).json({ error: "save" });
 
+  if (!session && gets1127(plans)) { try { await archiveMail(pair ? [email, pair_email] : [email], name); } catch {} }
   const key = (process.env.RESEND_API_KEY || process.env.resend);
   let mailed = false;
   if (key) {
-    const list = plans.map((p) => `<li>${esc(lab(p))}（${PRICES[p] ? yen(student && HALF.includes(p) ? PRICES[p] / 2 : PRICES[p]) : "無料"}）</li>`).join("");
+    const list = plans.map((p) => `<li>${esc(lab(p))}（${p === ARCH && gets1127(plans) ? "無料・11/27特典" : PRICES[p] ? yen(student && HALF.includes(p) ? PRICES[p] / 2 : PRICES[p]) : "無料"}）</li>`).join("");
     const early = isEarly() && plans.some((p) => p.startsWith("11/27"));
     const extra = [free ? (fullPass ? "紹介特典（通し券 無料）" : "紹介特典（11/27 講演会 無料）") : "", early ? "早割（11/27 1人1,000円オフ）" : "", student ? "学生半額" : "", pair_student ? "同伴者 学生半額" : "", pair ? "ペア割（1人1,500円オフ）" : ""].filter(Boolean).join("／");
     const body = `<div style="font-family:sans-serif;line-height:1.9;color:#2a2f3a;max-width:560px">
@@ -143,7 +146,7 @@ ${pair ? `<b>一緒に参加する方</b><br>${esc(pair_name)} 様<br><br>` : ""
 ${referrer ? `<b>紹介者</b><br>${esc(referrer)}<br><br>` : ""}
 <b>合計</b>：${yen(total)}${pair ? "（2人分）" : ""}${extra ? `<br><small>${extra} 適用</small>` : ""}
 </div>
-${plans.includes(ARCH) ? `<p><b>11/4 対談アーカイブについて</b><br>お支払いを確認したあと、アーカイブのURLをメールでお送りします。</p>` : ""}<p>会場の詳細は、あらためてご連絡します。（11/27・12/21はどちらも18:00〜21:00）</p>
+${plans.includes(ARCH) || gets1127(plans) ? `<p><b>11/4 対談アーカイブについて</b><br>${gets1127(plans) ? "11/27にお申し込みの方には、11/4対談のアーカイブを無料でプレゼントしています。" : ""}お支払いを確認したあと、アーカイブのURLをメールでお送りします。</p>` : ""}<p>会場の詳細は、あらためてご連絡します。（11/27・12/21はどちらも18:00〜21:00）</p>
 ${plans.includes("11/4 オンライン対談") ? `<div style="border:2px solid #2d8cff;background:#f2f8ff;padding:16px 20px;margin:16px 0">
 <b>11/4（水）20:00〜 オンライン対談の参加URL（Zoom）</b><br>
 当日はこちらから入室してください。<br>

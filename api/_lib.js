@@ -81,10 +81,13 @@ async function sendArchive(s) {
   await stripe("POST", "checkout/sessions/" + encodeURIComponent(s.id), { "metadata[archive_sent]": "yes" });
   const to = [s.customer_email || (s.customer_details && s.customer_details.email)].concat(m.pair_email ? [m.pair_email] : []).filter(Boolean);
   if (!to.length) return;
-  await sendMail(to, "【アーカイブのご案内】11/4 村主悠真×つっちー オンライン対談",
+  await archiveMail(to, m.name || "");
+}
+async function archiveMail(to, name) {
+  return sendMail(to, "【アーカイブのご案内】11/4 村主悠真×つっちー オンライン対談",
     `<div style="font-family:sans-serif;line-height:1.9;color:#2a2f3a;max-width:560px">
-<p>${esc(m.name || "")} 様</p>
-<p>こんにちは、つっちーです。<br>11/4 オンライン対談のアーカイブをお申し込みいただき、ありがとうございます。<br>お支払いを確認しました。</p>
+<p>${esc(name)} 様</p>
+<p>こんにちは、つっちーです。<br>お申し込みいただき、ありがとうございます。お支払いを確認しました。<br>11/4 オンライン対談のアーカイブをお届けします。</p>
 <div style="border:2px solid #b8963e;background:#fbf8f1;padding:16px 20px;margin:16px 0">
 <b>▼ アーカイブはこちら</b><br>
 <a href="${ARCH_URL}" style="display:inline-block;margin-top:10px;background:#16305a;color:#fff;text-decoration:none;padding:10px 22px;border-radius:2px">アーカイブを見る</a><br>
@@ -137,4 +140,4 @@ async function runReferralRefunds() {
   return done;
 }
 
-module.exports = { ARCH, ARCH_PRICE, SB, SB_KEY, SITE, PRICES, HALF, LIMITS, PASSES, NEEDS, remaining, isEarly, EARLY_OFF, lectureValue, yen, esc, person, rpc, stripe, sendMail, confirmSession, runReferralRefunds };
+module.exports = { archiveMail, ARCH, ARCH_PRICE, SB, SB_KEY, SITE, PRICES, HALF, LIMITS, PASSES, NEEDS, remaining, isEarly, EARLY_OFF, lectureValue, yen, esc, person, rpc, stripe, sendMail, confirmSession, runReferralRefunds };
