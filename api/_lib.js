@@ -9,8 +9,8 @@ const PRICES = { "11/4 オンライン対談": 0, "11/27 講演会": 6600, "11/2
   "冬の通し券（会場）": 24400, "冬の通し券 ライト（会場）": 15800, "冬の通し券 ライト（オンライン）": 15800, "11/4 対談アーカイブ": 1000 };
 // 紹介割：この紹介者経由の申し込みは参加者が1人500円オフ（そのかわり紹介者本人の無料特典はなし）
 const normN = (s) => String(s || "").replace(/[\s　]/g, "");
-const REF_OFF = { "藤本まどか": 500 };
-const NO_REWARD = ["藤本まどか"];
+const REF_OFF = { "藤本まどか": 500, "渡辺真緒": 500 };
+const NO_REWARD = ["藤本まどか", "渡辺真緒"];
 const refOff = (ref) => REF_OFF[normN(ref)] || 0;
 const noReward = (name) => NO_REWARD.includes(normN(name));
 const ARCH = "11/4 対談アーカイブ", ARCH_PRICE = 1000, ARCH_URL = "https://youtu.be/eV8eeX3alE0";
