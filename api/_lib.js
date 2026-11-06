@@ -7,6 +7,12 @@ const REPLY_TO = process.env.REPLY_TO || "kyoten.zimukyoku@gmail.com";
 const SITE = "https://murasu-dampatsu-lp.vercel.app";
 const PRICES = { "11/4 オンライン対談": 0, "11/27 講演会": 6600, "11/27 講演会（オンライン）": 6600, "11/27 講演会＋懇親会セット": 15500, "12/21 虚点": 11000, "12/21 虚点（オンライン）": 11000,
   "冬の通し券（会場）": 24400, "冬の通し券 ライト（会場）": 15800, "冬の通し券 ライト（オンライン）": 15800, "11/4 対談アーカイブ": 1000 };
+// 紹介割：この紹介者経由の申し込みは参加者が1人500円オフ（そのかわり紹介者本人の無料特典はなし）
+const normN = (s) => String(s || "").replace(/[\s　]/g, "");
+const REF_OFF = { "藤本まどか": 500 };
+const NO_REWARD = ["藤本まどか"];
+const refOff = (ref) => REF_OFF[normN(ref)] || 0;
+const noReward = (name) => NO_REWARD.includes(normN(name));
 const ARCH = "11/4 対談アーカイブ", ARCH_PRICE = 1000, ARCH_URL = "https://youtu.be/eV8eeX3alE0";
 const PASSES = ["冬の通し券（会場）", "冬の通し券 ライト（会場）", "冬の通し券 ライト（オンライン）"];
 const HALF = ["11/27 講演会", "11/27 講演会（オンライン）", "11/27 講演会＋懇親会セット"].concat(PASSES);
@@ -113,6 +119,7 @@ async function runReferralRefunds() {
   const done = [];
   const list = (await rpc("adm_refund_candidates", {})) || [];
   for (const a of list) {
+    if (noReward(a.name)) continue;
     const legacy = (a.plans || []).includes("11/27 懇親会") || new Date(a.created_at) < new Date("2026-11-03T00:00:00+09:00");
     const disc = a.referral_discount || 0, refunded = a.refunded_amount || 0;
     const ownFull = a.pair ? Math.max(0, person(a.plans || [], a.student, legacy, isEarly(a.created_at)) - 1500) : (a.total || 0) + disc - ((a.plans || []).includes(ARCH) ? ARCH_PRICE : 0);
@@ -140,4 +147,4 @@ async function runReferralRefunds() {
   return done;
 }
 
-module.exports = { archiveMail, ARCH, ARCH_PRICE, SB, SB_KEY, SITE, PRICES, HALF, LIMITS, PASSES, NEEDS, remaining, isEarly, EARLY_OFF, lectureValue, yen, esc, person, rpc, stripe, sendMail, confirmSession, runReferralRefunds };
+module.exports = { refOff, noReward, archiveMail, ARCH, ARCH_PRICE, SB, SB_KEY, SITE, PRICES, HALF, LIMITS, PASSES, NEEDS, remaining, isEarly, EARLY_OFF, lectureValue, yen, esc, person, rpc, stripe, sendMail, confirmSession, runReferralRefunds };

@@ -598,7 +598,7 @@ footer{text-align:center;font-size:12px;color:var(--mu);padding:36px 0 56px;back
 <script>
 (function(){
 var REF='';try{var q=new URLSearchParams(location.search).get('ref');if(q){REF=q.slice(0,100);try{localStorage.setItem('mref',REF)}catch(e){}}else{try{REF=localStorage.getItem('mref')||''}catch(e){}}}catch(e){}
-if(REF){var ri=document.getElementById('referrer');ri.value=REF;var rn=document.getElementById('refnote');rn.textContent=REF+' さんからのご紹介';rn.hidden=false;}
+var REFOFF={'藤本まどか':500};var ROFF=REFOFF[REF.replace(/[\s　]/g,'')]||0;if(REF){var ri=document.getElementById('referrer');ri.value=REF;var rn=document.getElementById('refnote');rn.textContent=REF+' さんからのご紹介'+(ROFF?'（紹介割：1人'+ROFF+'円オフ）':'');rn.hidden=false;}
 var EARLY=Date.now()<=Date.parse('2026-11-06T23:59:59+09:00');if(!EARLY)document.querySelectorAll('.early').forEach(function(e){e.remove()});
 var f=document.getElementById('f'),pair=document.getElementById('pair'),pn=document.getElementById('pairname');
 function person(c,stu){
@@ -613,7 +613,7 @@ function calc(){
  if(EARLY&&c.some(function(v){return v.indexOf('11/27')===0}))notes.push('早割（1,000円オフ）');
  if(stu)notes.push('学生半額');
  if(pair.checked){var b=person(c,pst);if(pst&&!stu)notes.push('同伴者 学生半額');p=Math.max(0,a-1500)+Math.max(0,b-1500)+ar*2;if(a>0||b>0)notes.push('2人分・ペア割（1人1,500円オフ）');}
- document.getElementById('sum').textContent=p.toLocaleString();
+ if(ROFF&&c.some(function(v){return v.indexOf('11/27')===0||v.indexOf('12/21')===0||v.indexOf('冬の通し券')===0})){p=Math.max(0,p-ROFF*(pair.checked?2:1));notes.push('紹介割（1人'+ROFF+'円オフ）');}document.getElementById('sum').textContent=p.toLocaleString();
  document.getElementById('sumnote').textContent=notes.length?notes.join('／')+' 適用':'';
  pn.hidden=!pair.checked;
 }

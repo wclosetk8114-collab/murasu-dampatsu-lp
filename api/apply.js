@@ -1,4 +1,4 @@
-const { archiveMail, ARCH, ARCH_PRICE, rpc, PRICES, HALF, LIMITS, PASSES, NEEDS, remaining, person, isEarly, EARLY_OFF, lectureValue } = require("./_lib");
+const { refOff, noReward, archiveMail, ARCH, ARCH_PRICE, rpc, PRICES, HALF, LIMITS, PASSES, NEEDS, remaining, person, isEarly, EARLY_OFF, lectureValue } = require("./_lib");
 // 申し込み受付：Supabaseに保存 → 確認メール送信（RESEND_API_KEY があるとき）
 const SB_URL = "https://cczerefroeveoobdlhoj.supabase.co/rest/v1/event_applications";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjemVyZWZyb2V2ZW9vYmRsaG9qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4OTg1NjYsImV4cCI6MjEwMzQ3NDU2Nn0.KsQtf2gYD5EOFYB9Jq-uH8pHI1dVIrUH99J0qkUJy54";
@@ -106,8 +106,11 @@ module.exports = async (req, res) => {
   } catch {}
   // 紹介特典：支払い済みの人を2人以上紹介した人は11/27講演会が無料（ページには書かない）
   let referred = 0;
-  try { referred = Number(await rpc("adm_paid_referral_count", { p_name: name })) || 0; } catch {}
-  const { total, set, discount, fullPass } = calc(plans, pair, student, pair_student, referred);
+  if (!noReward(name)) { try { referred = Number(await rpc("adm_paid_referral_count", { p_name: name })) || 0; } catch {} }
+  const c0 = calc(plans, pair, student, pair_student, referred);
+  const { set, discount, fullPass } = c0;
+  const rOff = plans.some((k) => k.startsWith("11/27") || k.startsWith("12/21") || PASSES.includes(k)) ? refOff(ref_code || referrer) : 0;
+  const total = Math.max(0, c0.total - rOff * (pair ? 2 : 1));
   const free = discount > 0;
 
   // 有料ならStripeの決済画面をつくる（STRIPE_SECRET_KEY があるとき）
@@ -130,7 +133,7 @@ module.exports = async (req, res) => {
   if (key) {
     const list = plans.map((p) => `<li>${esc(lab(p))}（${p === ARCH && gets1127(plans) ? "無料・11/27特典" : PRICES[p] ? yen(student && HALF.includes(p) ? PRICES[p] / 2 : PRICES[p]) : "無料"}）</li>`).join("");
     const early = isEarly() && plans.some((p) => p.startsWith("11/27"));
-    const extra = [free ? (fullPass ? "紹介特典（通し券 無料）" : "紹介特典（11/27 講演会 無料）") : "", early ? "早割（11/27 1人1,000円オフ）" : "", student ? "学生半額" : "", pair_student ? "同伴者 学生半額" : "", pair ? "ペア割（1人1,500円オフ）" : ""].filter(Boolean).join("／");
+    const extra = [rOff ? `紹介割（1人${rOff}円オフ）` : "", free ? (fullPass ? "紹介特典（通し券 無料）" : "紹介特典（11/27 講演会 無料）") : "", early ? "早割（11/27 1人1,000円オフ）" : "", student ? "学生半額" : "", pair_student ? "同伴者 学生半額" : "", pair ? "ペア割（1人1,500円オフ）" : ""].filter(Boolean).join("／");
     const body = `<div style="font-family:sans-serif;line-height:1.9;color:#2a2f3a;max-width:560px">
 <p>${esc(name)} 様</p>
 <p>「2027年をどう生きるか ─ 村主悠真 × つっちー」にお申し込みいただき、ありがとうございます。<br>以下の内容で受け付けました。</p>
