@@ -10,8 +10,9 @@ module.exports = async (req, res) => {
     const s = await stripe("GET", "checkout/sessions/" + encodeURIComponent(r.stripe_session_id));
     if (!s || !s.payment_intent || s.payment_status !== "paid") return res.status(409).json({ error: "notpaid" });
     const amt = Math.min(r.amount, s.amount_total || 0);
-    const rf = await stripe("POST", "refunds", { payment_intent: s.payment_intent, amount: String(amt), "metadata[reason]": "duplicate" });
-    if (!rf || !rf.id) return res.status(502).json({ error: "refund" });
+    const rr = await fetch("https://api.stripe.com/v1/refunds", { method: "POST", headers: { Authorization: "Bearer " + process.env.STRIPE_SECRET_KEY, "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ payment_intent: s.payment_intent, amount: String(amt), "metadata[reason]": "duplicate" }).toString() });
+    const rf = await rr.json().catch(() => ({}));
+    if (!rr.ok || !rf.id) return res.status(502).json({ error: "refund", code: rf.error && (rf.error.code || rf.error.type), msg: rf.error && String(rf.error.message || "").replace(/(sk|rk)_[A-Za-z0-9_*]+/g, "***") });
     await rpc("adm_done_refund", { p_token: t, p_refund: rf.id });
     return res.status(200).json({ ok: true, amount: amt, name: r.name, status: rf.status });
   } catch (e) { return res.status(500).json({ error: "server" }); }
