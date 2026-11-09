@@ -169,6 +169,13 @@ ${plans.includes("11/4 オンライン対談") ? `<div style="border:2px solid #
 当日までに見ておくと、お話の理解がぐっと深まるのでおすすめです。<br>今のあなたに響く入口から、村主悠真の世界に触れてみてください。
 <ol style="margin:8px 0 0;padding-left:1.4em"><li style="margin:6px 0">Λ瞑想・θ回廊などの村主悠真関連PJ告知用ΩLINE<br><a href="https://index.yuma-muranushi.jp/line/open/BeSzTQHJdaun">https://index.yuma-muranushi.jp/line/open/BeSzTQHJdaun</a></li><li style="margin:6px 0">虚点・講演会公式LINE（村主プロジェクト診断や全国の開催情報を配信中）<br><a href="https://lin.ee/PJS8mvNW">https://lin.ee/PJS8mvNW</a></li><li style="margin:6px 0">村主悠真公式YouTubeチャンネル<br><a href="https://youtu.be/A8_ahHcLG1Y?si=hSzRYUt3I7mxv4r5">https://youtu.be/A8_ahHcLG1Y?si=hSzRYUt3I7mxv4r5</a></li><li style="margin:6px 0">虚次元メディア『視座プラス』（構造視力を養うメディア）<br><a href="https://iii-iii.com/i.media/">https://iii-iii.com/i.media/</a></li><li style="margin:6px 0">村主悠真論文サイト（虚数拡張理論を基に論文を更新中）<br><a href="https://iii-iii.com/i.fragmenta/">https://iii-iii.com/i.fragmenta/</a></li><li style="margin:6px 0">iPeace（世界平和ブランド）<br><a href="https://iii-iii.com/i.peace/">https://iii-iii.com/i.peace/</a></li></ol>
 </div>
+<div style="border:2px solid #dd2a7b;background:#fff6fa;padding:16px 20px;margin:16px 0">
+<b>■ ひとつ、お願いがあります</b><br>
+このイベントを、周りの方にも届けてもらえたらうれしいです。<br>
+Instagramの告知投稿を、<b>ストーリーズでシェア</b>や<b>再投稿</b>していただけると、とても力になります🙏<br>
+<a href="https://www.instagram.com/p/DfUGflkkhRJ/" style="display:inline-block;margin-top:10px;background:#dd2a7b;color:#fff;text-decoration:none;padding:10px 22px;border-radius:999px">Instagramの告知投稿を開く</a><br>
+<small>LINEなどで直接送っていただくのも大歓迎です。イベントページ：${SITE}</small>
+</div>
 <p>イベントページ：<a href="${SITE}">${SITE}</a></p>
 <p>ご不明な点は、このメールにそのまま返信してください。</p>
 <p>つっちー（結び）</p></div>`;
