@@ -6,7 +6,7 @@ const NOTIFY_TO = process.env.NOTIFY_TO || "w.closet.k8114@gmail.com";
 const REPLY_TO = process.env.REPLY_TO || "kyoten.zimukyoku@gmail.com";
 const SITE = "https://murasu-dampatsu-lp.vercel.app";
 const PRICES = { "11/4 オンライン対談": 0, "11/27 講演会": 6600, "11/27 講演会（オンライン）": 6600, "11/27 講演会＋懇親会セット": 15500, "12/21 虚点": 11000, "12/21 虚点（オンライン）": 11000,
-  "冬の通し券（会場）": 24400, "冬の通し券 ライト（会場）": 15800, "冬の通し券 ライト（オンライン）": 15800, "11/4 対談アーカイブ": 1000 };
+  "冬の通し券（会場）": 24400, "冬の通し券 ライト（会場）": 15800, "冬の通し券 ライト（オンライン）": 15800, "11/4 対談アーカイブ": 1000, "11/27 講演会（アーカイブのみ）": 6600, "12/21 虚点（アーカイブのみ）": 11000 };
 // 紹介割：この紹介者経由の申し込みは参加者が1人500円オフ（そのかわり紹介者本人の無料特典はなし）
 const normN = (s) => String(s || "").replace(/[\s　]/g, "");
 const REF_OFF = { "藤本まどか": 500, "渡辺真緒": 1000, "上野ひかり": 500 };
@@ -15,7 +15,7 @@ const refOff = (ref) => REF_OFF[normN(ref)] || 0;
 const noReward = (name) => NO_REWARD.includes(normN(name));
 const ARCH = "11/4 対談アーカイブ", ARCH_PRICE = 1000, ARCH_URL = "https://youtu.be/eV8eeX3alE0";
 const PASSES = ["冬の通し券（会場）", "冬の通し券 ライト（会場）", "冬の通し券 ライト（オンライン）"];
-const HALF = ["11/27 講演会", "11/27 講演会（オンライン）", "11/27 講演会＋懇親会セット"].concat(PASSES);
+const HALF = ["11/27 講演会", "11/27 講演会（オンライン）", "11/27 講演会＋懇親会セット", "11/27 講演会（アーカイブのみ）"].concat(PASSES);
 const LIMITS = { "11/27 講演会＋懇親会セット": 30, "12/21 虚点": 20 };
 // 定員の数え方：通し券（会場）はセットと虚点会場を1席ずつ、ライト（会場）は虚点会場を1席使う
 const SEAT_USERS = { "11/27 講演会＋懇親会セット": ["11/27 講演会＋懇親会セット", "冬の通し券（会場）"], "12/21 虚点": ["12/21 虚点", "冬の通し券（会場）", "冬の通し券 ライト（会場）"] };
@@ -38,7 +38,7 @@ function person(plans, stu, legacy, early) {
   return Math.max(0, p);
 }
 // 紹介特典：支払い済みの人を2人以上紹介した人は「11/27 講演会」が無料（セットの人は講演会分を引く）
-const LECTURE_PLANS = ["11/27 講演会", "11/27 講演会（オンライン）", "11/27 講演会＋懇親会セット"].concat(PASSES);
+const LECTURE_PLANS = ["11/27 講演会", "11/27 講演会（オンライン）", "11/27 講演会＋懇親会セット", "11/27 講演会（アーカイブのみ）"].concat(PASSES);
 function lectureValue(plans, stu) {
   return (plans || []).some((k) => LECTURE_PLANS.includes(k)) ? (stu ? 3300 : 6600) : 0;
 }
