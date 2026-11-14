@@ -636,23 +636,24 @@ footer{text-align:center;font-size:12px;color:var(--mu);padding:36px 0 56px;back
 <script>
 (function(){
 var REF='';try{var q=new URLSearchParams(location.search).get('ref');if(q){REF=q.slice(0,100);try{localStorage.setItem('mref',REF)}catch(e){}}else{try{REF=localStorage.getItem('mref')||''}catch(e){}}}catch(e){}
+var PROMO='',PROMOS={tc27free:{'11/27 講演会':0,'11/27 講演会（オンライン）':0,'11/27 講演会＋懇親会セット':5000}};try{var pq=new URLSearchParams(location.search).get('p');if(pq&&PROMOS[pq]){PROMO=pq;try{sessionStorage.setItem('mpromo',pq)}catch(e){}}else{try{var ps=sessionStorage.getItem('mpromo');if(ps&&PROMOS[ps])PROMO=ps}catch(e){}}}catch(e){}
 var REFOFF={'藤本まどか':500,'渡辺真緒':1000,'上野ひかり':500};var ROFF=REFOFF[REF.replace(/[\s　]/g,'')]||0;if(REF){var ri=document.getElementById('referrer');ri.value=REF;var rn=document.getElementById('refnote');rn.textContent=REF+' さんからのご紹介'+(ROFF?'（紹介割：1人'+ROFF+'円オフ）':'');rn.hidden=false;}
 var EARLY=Date.now()<=Date.parse('2026-11-06T23:59:59+09:00');if(!EARLY)document.querySelectorAll('.early').forEach(function(e){e.remove()});
 (function(){var u=location.origin+'/'+(REF?'?ref='+encodeURIComponent(REF):'');var tx='村主悠真さんの講演会、一緒に行かない？ペアで申し込むと1人1,500円オフになるみたい！';var e=encodeURIComponent;var tx2='村主悠真さんの講演会に申し込みました！年明けからは直接会える機会が少なくなるそうなので、気になる方はぜひ一緒に。';var db=document.getElementById('doneShare');if(db){db.querySelector('.sh-line').href='https://line.me/R/msg/text/?'+e(tx2+'\n'+location.origin+'/');db.querySelector('.sh-x').href='https://twitter.com/intent/tweet?text='+e(tx2)+'&url='+e(location.origin+'/');var dc=db.querySelector('.sh-copy');dc.addEventListener('click',function(){var s=tx2+'\n'+location.origin+'/';if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(s).then(function(){dc.textContent='コピーしました'})}else{prompt('コピーしてください',s)}})}document.querySelectorAll('.invite').forEach(function(b){b.querySelector('.sh-line').href='https://line.me/R/msg/text/?'+e(tx+'\n'+u);b.querySelector('.sh-x').href='https://twitter.com/intent/tweet?text='+e(tx)+'&url='+e(u);b.querySelector('.sh-fb').href='https://www.facebook.com/sharer/sharer.php?u='+e(u);var c=b.querySelector('.sh-copy');c.addEventListener('click',function(){var done=function(){c.textContent='コピーしました';setTimeout(function(){c.textContent='リンクをコピー'},2000)};if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(tx+'\n'+u).then(done,function(){prompt('コピーしてください',u)})}else{prompt('コピーしてください',u)}})})})();
 (function(){var ab=document.getElementById('archBtn');if(ab)ab.addEventListener('click',function(){var c=document.querySelector('input[name=plan][value="11/4 対談アーカイブ"]');if(c&&!c.checked){c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}))}})})();
-var f=document.getElementById('f'),pair=document.getElementById('pair'),pn=document.getElementById('pairname');
+var f=document.getElementById('f'),pair=document.getElementById('pair'),pn=document.getElementById('pairname');if(PROMO){Object.keys(PROMOS[PROMO]).forEach(function(k){var i=document.querySelector('input[name=plan][value="'+k+'"]');if(!i)return;i.dataset.promo='1';var sp=i.closest('label').querySelector('span');if(sp)sp.innerHTML='<b style="color:#b8302b">特別価格 '+(PROMOS[PROMO][k]?PROMOS[PROMO][k].toLocaleString()+'円':'無料')+'</b>'});var rn2=document.getElementById('refnote');if(rn2){rn2.hidden=false;rn2.textContent=(rn2.textContent?rn2.textContent+'／':'')+'特別ご招待：11/27 講演会は無料、懇親会つきセットは5,000円でご参加いただけます'}}
 function person(c,stu){
- var p=0;f.querySelectorAll('input[name=plan]:checked').forEach(function(x){if(x.dataset.arch)return;var v=+x.dataset.p;if(stu&&(x.value.indexOf('11/27')===0||x.value.indexOf('冬の通し券')===0))v=v/2;p+=v});
+ var p=0;f.querySelectorAll('input[name=plan]:checked').forEach(function(x){if(x.dataset.arch||x.dataset.promo)return;var v=+x.dataset.p;if(stu&&(x.value.indexOf('11/27')===0||x.value.indexOf('冬の通し券')===0))v=v/2;p+=v});
  if(EARLY&&c.some(function(v){return v.indexOf('11/27')===0}))p=Math.max(0,p-1000);
  return p;
 }
 function calc(){
  var c=[].slice.call(f.querySelectorAll('input[name=plan]:checked')).map(function(x){return x.value});
  var stu=document.getElementById('student').checked,pst=document.getElementById('pstudent').checked;
- var g27=c.some(function(v){return v.indexOf('11/27')===0||v.indexOf('冬の通し券')===0});var ar=(c.indexOf('11/4 対談アーカイブ')>-1&&!g27)?1000:0;var a=person(c,stu),p=a+ar,notes=[];
+ var g27=c.some(function(v){return v.indexOf('11/27')===0||v.indexOf('冬の通し券')===0});var ar=(c.indexOf('11/4 対談アーカイブ')>-1&&!g27)?1000:0;var ps=0;var hp=false;if(PROMO)c.forEach(function(v){if(PROMOS[PROMO][v]!=null){ps+=PROMOS[PROMO][v];hp=true}});var a=person(c,stu),p=a+ar+ps,notes=[];if(hp)notes.push('特別価格');
  if(EARLY&&c.some(function(v){return v.indexOf('11/27')===0}))notes.push('早割（1,000円オフ）');
  if(stu)notes.push('学生半額');
- if(pair.checked){var b=person(c,pst);if(pst&&!stu)notes.push('同伴者 学生半額');p=Math.max(0,a-1500)+Math.max(0,b-1500)+ar*2;if(a>0||b>0)notes.push('2人分・ペア割（1人1,500円オフ）');}
+ if(pair.checked){var b=person(c,pst);if(pst&&!stu)notes.push('同伴者 学生半額');p=(a>0?Math.max(0,a-1500)+Math.max(0,b-1500):0)+ar*2+ps*2;if(a>0||b>0)notes.push('2人分・ペア割（1人1,500円オフ）');}
  if(ROFF&&c.some(function(v){return v.indexOf('11/27')===0||v.indexOf('12/21')===0||v.indexOf('冬の通し券')===0})){p=Math.max(0,p-ROFF*(pair.checked?2:1));notes.push('紹介割（1人'+ROFF+'円オフ）');}document.getElementById('sum').textContent=p.toLocaleString();
  document.getElementById('sumnote').textContent=notes.length?notes.join('／')+' 適用':'';
  pn.hidden=!pair.checked;
@@ -672,7 +673,7 @@ f.addEventListener('submit',function(e){
  if(pair.checked&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(pe)){err.textContent='一緒に参加する方のメールアドレスを正しく入力してください';return}
  err.textContent='';var b=document.getElementById('sb');b.disabled=true;b.textContent='送信中…';
  fetch('/api/apply',{method:'POST',headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({name:name,email:email,plans:plans,pair:pair.checked,pair_name:pair.checked?(d.get('pair_name')||'').trim():null,pair_email:pair.checked?pe:null,student:document.getElementById('student').checked,pair_student:pair.checked&&document.getElementById('pstudent').checked,referrer:(d.get('referrer')||'').trim()||null,ref_code:REF||null,message:(d.get('message')||'').trim()||null})})
+  body:JSON.stringify({name:name,email:email,plans:plans,pair:pair.checked,pair_name:pair.checked?(d.get('pair_name')||'').trim():null,pair_email:pair.checked?pe:null,student:document.getElementById('student').checked,pair_student:pair.checked&&document.getElementById('pstudent').checked,referrer:(d.get('referrer')||'').trim()||null,ref_code:REF||null,promo:PROMO||null,message:(d.get('message')||'').trim()||null})})
  .then(function(r){if(r.status==409){err.textContent='申し訳ありません。選んだ回が満席になりました。ほかの回を選んでください。';b.disabled=false;b.textContent='この内容で申し込む';throw 1}if(!r.ok)throw 0;return r.json()}).then(function(j){if(j&&j.checkout_url){b.textContent='お支払い画面へ移動します…';location.href=j.checkout_url;return}f.hidden=true;document.getElementById('done').hidden=false;document.getElementById('apply').scrollIntoView({behavior:'smooth'})})
  .catch(function(x){if(x===1)return;err.textContent='送信できませんでした。時間をおいてもう一度お試しください。';b.disabled=false;b.textContent='この内容で申し込む'});
 });
