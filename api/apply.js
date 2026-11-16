@@ -157,7 +157,7 @@ ${pair ? `<b>一緒に参加する方</b><br>${esc(pair_name)} 様<br><br>` : ""
 ${referrer ? `<b>紹介者</b><br>${esc(referrer)}<br><br>` : ""}
 <b>合計</b>：${yen(total)}${pair ? "（2人分）" : ""}${extra ? `<br><small>${extra} 適用</small>` : ""}
 </div>
-${plans.includes(ARCH) || gets1127(plans) ? `<p><b>11/4 対談アーカイブについて</b><br>${gets1127(plans) ? "11/27にお申し込みの方には、11/4対談のアーカイブを無料でプレゼントしています。" : ""}お支払いを確認したあと、アーカイブのURLをメールでお送りします。</p>` : ""}${plans.some((p) => p.includes("アーカイブのみ")) ? `<p><b>アーカイブについて</b><br>イベント終了後、アーカイブの準備ができしだい、視聴URLをメールでお送りします。</p>` : ""}<p>会場の詳細は、あらためてご連絡します。（11/27・12/21はどちらも18:00〜21:00）</p>
+${plans.includes(ARCH) || gets1127(plans) ? `<p><b>11/4 対談アーカイブについて</b><br>${gets1127(plans) ? "11/27にお申し込みの方には、11/4対談のアーカイブを無料でプレゼントしています。" : ""}お支払いを確認したあと、アーカイブのURLをメールでお送りします。</p>` : ""}${plans.some((p) => p.includes("アーカイブのみ")) ? `<p><b>アーカイブについて</b><br>イベント終了後、アーカイブの準備ができしだい、視聴URLをメールでお送りします。</p>` : ""}${plans.some((p) => (p.startsWith("11/27") && !p.includes("オンライン") && !p.includes("アーカイブ")) || p === "冬の通し券（会場）" || p === "冬の通し券 ライト（会場）") ? `<div style="border:1px solid #d8cdb6;padding:14px 18px;margin:14px 0"><b>11/27（金）の会場</b><br>秋葉原加藤ビル<br>〒101-0025 東京都千代田区神田佐久間町2-15<br><a href="https://maps.google.com/maps?q=35.6983505,139.7761308&zoom=16">Googleマップで見る</a></div>` : ""}<p>（11/27・12/21はどちらも18:00〜21:00。12/21の会場の詳細は、あらためてご連絡します）</p>
 ${plans.includes("11/4 オンライン対談") ? `<div style="border:2px solid #2d8cff;background:#f2f8ff;padding:16px 20px;margin:16px 0">
 <b>11/4（水）20:00〜 オンライン対談の参加URL（Zoom）</b><br>
 当日はこちらから入室してください。<br>
