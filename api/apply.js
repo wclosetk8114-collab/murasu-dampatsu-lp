@@ -33,7 +33,7 @@ const yen = (n) => n.toLocaleString("ja-JP") + "円";
 // 11/27（講演会・セット・通し券）を申し込んだ人は、11/4アーカイブが無料でついてくる
 const gets1127 = (plans) => plans.some((k) => k.startsWith("11/27") || PASSES.includes(k));
 // 特別価格リンク（?p=コード）：対象プランだけ1人あたりの固定価格にする（学生割・ペア割・早割はかからない）
-const PROMOS = { "tc27free": { "11/27 講演会": 0, "11/27 講演会（オンライン）": 0, "11/27 講演会＋懇親会セット": 5000 } };
+const PROMOS = { "tc27free": { "11/27 講演会": 0, "11/27 講演会＋懇親会セット": 5000 } };
 function calc(allPlans, pair, stu, pstu, referred, promo) {
   const P = promo || {};
   const plans = allPlans.filter((k) => !(k in P));
