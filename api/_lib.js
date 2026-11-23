@@ -24,6 +24,7 @@ const PASS_EXTRA = 3;
 const NEEDS = { "冬の通し券（会場）": ["11/27 講演会＋懇親会セット", "12/21 虚点（通し券枠）"], "冬の通し券 ライト（会場）": ["12/21 虚点（通し券枠）"], "11/27 講演会＋懇親会セット": ["11/27 講演会＋懇親会セット"], "12/21 虚点": ["12/21 虚点"] };
 // 旧料金（2026-11-03より前の申し込み）の返金計算用
 const LEGACY = { "11/27 講演会": 5500, "11/27 講演会（オンライン）": 5500, "11/27 懇親会": 11000 };
+const PAIR_OFF = 1500;
 const yen = (n) => Number(n).toLocaleString("ja-JP") + "円";
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -150,4 +151,36 @@ async function runReferralRefunds() {
   return done;
 }
 
-module.exports = { refOff, noReward, archiveMail, ARCH, ARCH_PRICE, SB, SB_KEY, SITE, PRICES, HALF, LIMITS, PASSES, NEEDS, remaining, isEarly, EARLY_OFF, lectureValue, yen, esc, person, rpc, stripe, sendMail, confirmSession, runReferralRefunds };
+// あとからペア割：お誘いした人（1人で申し込み済み）に1,500円返金。Stripeの承認待ちになっても二重に依頼しない
+async function runPairRefunds() {
+  const done = [];
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) return done;
+  const list = (await rpc("adm_pair_refund_candidates", {})) || [];
+  for (const a of list) {
+    let mark = null, ok = false;
+    try {
+      const s = a.stripe_session_id ? await stripe("GET", "checkout/sessions/" + encodeURIComponent(a.stripe_session_id)) : null;
+      if (!s || !s.payment_intent) { mark = "manual:no_payment"; }
+      else {
+        const r = await fetch("https://api.stripe.com/v1/refunds", { method: "POST", headers: { Authorization: "Bearer " + key, "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ payment_intent: s.payment_intent, amount: String(a.amount), "metadata[reason]": "pair_invite" }).toString() });
+        const j = await r.json().catch(() => ({}));
+        if (r.ok && j.id) { mark = j.id; ok = true; }
+        else mark = "pending:" + String((j.error && j.error.message) || r.status).slice(0, 180);
+      }
+    } catch (e) { mark = "pending:error"; }
+    await rpc("adm_done_pair_refund", { p_invite: a.invite_id, p_refund: mark });
+    await sendMail([a.email], "【ペア割】1,500円を返金します ─ 2027年をどう生きるか",
+      `<div style="font-family:sans-serif;line-height:1.9;color:#2a2f3a;max-width:560px"><p>${esc(a.name)} 様</p>
+<p>${esc(a.invitee_name)} 様をお誘いいただき、ありがとうございます。<br>ペア割として、${esc(a.name)} 様のお支払いから <b>${yen(a.amount)}</b> を返金します。</p>
+<p>お支払いに使ったカードに返金されます。カード会社によって、反映まで数日〜1か月ほどかかる場合があります。</p>
+<p>当日、お二人にお会いできるのを楽しみにしています。</p><p>つっちー（結び）</p></div>`, [NOTIFY_TO]).catch(() => {});
+    if (!ok) await sendMail([NOTIFY_TO], `【要対応】ペア割の返金 ${a.name}様 ${yen(a.amount)}`,
+      `<p>${esc(a.name)} 様（${esc(a.email)}）へのペア割返金 ${yen(a.amount)} が、自動では完了していません。</p><p>状態：${esc(mark)}</p><p>Stripeのダッシュボードで返金の承認（または手動返金）をお願いします。</p>`).catch(() => {});
+    done.push({ invite: a.invite_id, ok, mark });
+  }
+  return done;
+}
+
+module.exports = { PAIR_OFF, normN, runPairRefunds, refOff, noReward, archiveMail, ARCH, ARCH_PRICE, SB, SB_KEY, SITE, PRICES, HALF, LIMITS, PASSES, NEEDS, remaining, isEarly, EARLY_OFF, lectureValue, yen, esc, person, rpc, stripe, sendMail, confirmSession, runReferralRefunds };

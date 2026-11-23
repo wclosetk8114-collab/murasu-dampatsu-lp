@@ -1,4 +1,4 @@
-const { refOff, noReward, archiveMail, ARCH, ARCH_PRICE, rpc, PRICES, HALF, LIMITS, PASSES, NEEDS, remaining, person, isEarly, EARLY_OFF, lectureValue } = require("./_lib");
+const { PAIR_OFF, normN, refOff, noReward, archiveMail, ARCH, ARCH_PRICE, rpc, PRICES, HALF, LIMITS, PASSES, NEEDS, remaining, person, isEarly, EARLY_OFF, lectureValue } = require("./_lib");
 // 申し込み受付：Supabaseに保存 → 確認メール送信（RESEND_API_KEY があるとき）
 const SB_URL = "https://cczerefroeveoobdlhoj.supabase.co/rest/v1/event_applications";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjemVyZWZyb2V2ZW9vYmRsaG9qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4OTg1NjYsImV4cCI6MjEwMzQ3NDU2Nn0.KsQtf2gYD5EOFYB9Jq-uH8pHI1dVIrUH99J0qkUJy54";
@@ -118,7 +118,17 @@ module.exports = async (req, res) => {
   const c0 = calc(plans, pair, student, pair_student, referred, promo);
   const { set, discount, fullPass } = c0;
   const rOff = plans.some((k) => k.startsWith("11/27") || k.startsWith("12/21") || PASSES.includes(k)) ? refOff(ref_code || referrer) : 0;
-  const total = Math.max(0, c0.total - rOff * (pair ? 2 : 1));
+  // あとからペア割：1人で申し込み済み（支払い済み）の人の名前を紹介者欄に書くと、申し込み者は1,500円オフ（紹介した人にも1,500円返金）
+  let pairInviter = null;
+  if (!pair && referrer && plans.some((k) => k.startsWith("11/27") || k.startsWith("12/21") || PASSES.includes(k))) {
+    const cands = referrer.split(/[、,，・\/／\n]+/).map((x) => x.replace(/(さん|ちゃん|様|さま|くん)$/, "").trim()).filter(Boolean).slice(0, 4);
+    for (const c of cands) {
+      if (normN(c) === normN(name)) continue;
+      try { const r = await rpc("adm_pair_inviter", { p_name: c, p_email: email }); if (r && r[0]) { pairInviter = r[0]; break; } } catch {}
+    }
+  }
+  const pOff = pairInviter ? PAIR_OFF : 0;
+  const total = Math.max(0, c0.total - rOff * (pair ? 2 : 1) - pOff);
   const free = discount > 0;
 
   // 有料ならStripeの決済画面をつくる（STRIPE_SECRET_KEY があるとき）
@@ -134,6 +144,7 @@ module.exports = async (req, res) => {
     referrer: referrer || null, ref_code: ref_code || null, message: (promo ? `[特別価格:${promoCode}] ` : "") + (message || "") || null, total, student, pair_student, free_by_referral: free, referral_discount: discount, stripe_session_id: session ? session.id : null };
   const ins = await fetch(SB_URL, { method: "POST", headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(row) });
   if (!ins.ok) return res.status(500).json({ error: "save" });
+  if (pairInviter) { try { await rpc("adm_add_pair_invite", { p_inviter: pairInviter.id, p_token: pay_token }); } catch {} }
 
   if (!session && gets1127(plans)) { try { await archiveMail(pair ? [email, pair_email] : [email], name); } catch {} }
   const key = (process.env.RESEND_API_KEY || process.env.resend);
@@ -141,7 +152,7 @@ module.exports = async (req, res) => {
   if (key) {
     const list = plans.map((p) => `<li>${esc(lab(p))}（${promo && p in promo ? (promo[p] ? yen(promo[p]) : "無料") + "・特別価格" : p === ARCH && gets1127(plans) ? "無料・11/27特典" : PRICES[p] ? yen(student && HALF.includes(p) ? PRICES[p] / 2 : PRICES[p]) : "無料"}）</li>`).join("");
     const early = isEarly() && plans.some((p) => p.startsWith("11/27"));
-    const extra = [promo && plans.some((k) => k in promo) ? "特別価格" : "", rOff ? `紹介割（1人${rOff}円オフ）` : "", free ? (fullPass ? "紹介特典（通し券 無料）" : "紹介特典（11/27 講演会 無料）") : "", early ? "早割（11/27 1人1,000円オフ）" : "", student ? "学生半額" : "", pair_student ? "同伴者 学生半額" : "", pair ? "ペア割（1人1,500円オフ）" : ""].filter(Boolean).join("／");
+    const extra = [promo && plans.some((k) => k in promo) ? "特別価格" : "", rOff ? `紹介割（1人${rOff}円オフ）` : "", pOff ? `ペア割（${pairInviter.name}様とペア・1,500円オフ）` : "", free ? (fullPass ? "紹介特典（通し券 無料）" : "紹介特典（11/27 講演会 無料）") : "", early ? "早割（11/27 1人1,000円オフ）" : "", student ? "学生半額" : "", pair_student ? "同伴者 学生半額" : "", pair ? "ペア割（1人1,500円オフ）" : ""].filter(Boolean).join("／");
     const body = `<div style="font-family:sans-serif;line-height:1.9;color:#2a2f3a;max-width:560px">
 <p>${esc(name)} 様</p>
 <p>「2027年をどう生きるか ─ 村主悠真 × つっちー」にお申し込みいただき、ありがとうございます。<br>以下の内容で受け付けました。</p>
