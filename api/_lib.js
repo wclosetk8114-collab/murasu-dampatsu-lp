@@ -109,14 +109,14 @@ async function archiveMail(to, name) {
 <p>つっちー（結び）</p></div>`, [NOTIFY_TO]);
 }
 
-// 11/27のZoom URL：支払いが確認できたら自動で送る（会場・オンライン問わず。1回だけ、11/27 21時まで）
+// 11/27のZoom URL：支払いが確認できたら自動で送る（会場・オンライン問わず。1回だけ、11/27 21時半まで）
 const ZOOM_1127 = "https://us06web.zoom.us/j/88061309123?pwd=kJ9b0zvKdtJDMMsmcmJpATaAqjttiT.1";
 const OPENCHAT = "https://line.me/ti/g2/A6vHp2wI6sO00NYHovnl-rYSg7fXp-voM7pEjQ";
 const has1127Live = (labels) => String(labels || "").split(" / ").some((l) => l.includes("11/27") && !l.includes("アーカイブ視聴"));
 async function sendZoom(s) {
   const m = s.metadata || {};
   if (m.zoom_sent === "yes" || !has1127Live(m.plans)) return;
-  if (Date.now() > new Date("2026-11-27T21:00:00+09:00").getTime()) return;
+  if (Date.now() > new Date("2026-11-27T21:30:00+09:00").getTime()) return;
   await stripe("POST", "checkout/sessions/" + encodeURIComponent(s.id), { "metadata[zoom_sent]": "yes" });
   const to = [s.customer_email || (s.customer_details && s.customer_details.email)].concat(m.pair_email ? [m.pair_email] : []).filter(Boolean);
   if (to.length) await zoomMail(to, m.name || "");
@@ -127,7 +127,7 @@ async function zoomMail(to, name) {
 <p>${esc(name)} 様</p>
 <p>こんにちは、つっちーです。<br>お支払いを確認しました。11/27（金）の講演会のご案内をお送りします。</p>
 <div style="border:1px solid #d8cdb6;padding:16px 20px;margin:16px 0">
-<b>■ 日時</b><br>11月27日（金）18:00〜21:00<br><br>
+<b>■ 日時</b><br>11月27日（金）18:00〜21:30<br><br>
 <b>■ 会場（会場参加の方）</b><br>秋葉原加藤ビル<br>〒101-0025 東京都千代田区神田佐久間町2-15 秋葉原加藤ビル<br><a href="https://maps.google.com/maps?q=35.6983505,139.7761308&zoom=16">Googleマップで見る</a>
 </div>
 <div style="border:2px solid #2d8cff;background:#f2f8ff;padding:16px 20px;margin:16px 0">
