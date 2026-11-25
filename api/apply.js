@@ -1,4 +1,4 @@
-const { PAIR_OFF, normN, refOff, noReward, archiveMail, ARCH, ARCH_PRICE, rpc, PRICES, HALF, LIMITS, PASSES, NEEDS, remaining, person, isEarly, EARLY_OFF, lectureValue } = require("./_lib");
+const { zoomMail, PAIR_OFF, normN, refOff, noReward, archiveMail, ARCH, ARCH_PRICE, rpc, PRICES, HALF, LIMITS, PASSES, NEEDS, remaining, person, isEarly, EARLY_OFF, lectureValue } = require("./_lib");
 // 申し込み受付：Supabaseに保存 → 確認メール送信（RESEND_API_KEY があるとき）
 const SB_URL = "https://cczerefroeveoobdlhoj.supabase.co/rest/v1/event_applications";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjemVyZWZyb2V2ZW9vYmRsaG9qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4OTg1NjYsImV4cCI6MjEwMzQ3NDU2Nn0.KsQtf2gYD5EOFYB9Jq-uH8pHI1dVIrUH99J0qkUJy54";
@@ -147,6 +147,7 @@ module.exports = async (req, res) => {
   if (pairInviter) { try { await rpc("adm_add_pair_invite", { p_inviter: pairInviter.id, p_token: pay_token }); } catch {} }
 
   if (!session && gets1127(plans)) { try { await archiveMail(pair ? [email, pair_email] : [email], name); } catch {} }
+  if (!session && plans.some((k) => (k.startsWith("11/27") && !k.includes("アーカイブのみ")) || PASSES.includes(k)) && Date.now() < new Date("2026-11-27T21:00:00+09:00").getTime()) { try { await zoomMail(pair ? [email, pair_email] : [email], name); } catch {} }
   const key = (process.env.RESEND_API_KEY || process.env.resend);
   let mailed = false;
   if (key) {
