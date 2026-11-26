@@ -99,6 +99,8 @@ module.exports = async (req, res) => {
   const promoCode = s(b.promo, 40); const promo = PROMOS[promoCode] || null;
   const message = s(b.message, 1000);
   if (!name || !EMAIL_RE.test(email) || !plans.length) return res.status(400).json({ error: "input" });
+  // 11/27 22時以降は、11/27の参加・通し券は受け付けない（アーカイブのみ販売）
+  if (Date.now() >= new Date("2026-11-27T22:00:00+09:00").getTime() && plans.some((p) => PASSES.includes(p) || (p.startsWith("11/27") && !p.includes("アーカイブのみ")))) return res.status(400).json({ error: "closed1127" });
   if (pair && (!pair_name || !EMAIL_RE.test(pair_email))) return res.status(400).json({ error: "pair" });
   if (plans.filter((p) => PASSES.includes(p)).length > 1) return res.status(400).json({ error: "input" });
   if (plans.some((p) => PASSES.includes(p)) && plans.some((p) => p.startsWith("11/27") || p.startsWith("12/21"))) return res.status(400).json({ error: "input" });
@@ -128,7 +130,14 @@ module.exports = async (req, res) => {
     }
   }
   const pOff = pairInviter ? PAIR_OFF : 0;
-  const total = Math.max(0, c0.total - rOff * (pair ? 2 : 1) - pOff);
+  // 11/27終了後：12/21に申し込んだ人（同時申し込み・申し込み済み）は、11/27アーカイブが1,100円オフ
+  let d1221 = 0;
+  if (Date.now() >= new Date("2026-11-27T22:00:00+09:00").getTime() && plans.includes("11/27 講演会（アーカイブのみ）")) {
+    let ok = plans.some((k) => k.startsWith("12/21") && !k.includes("アーカイブのみ"));
+    if (!ok) { try { ok = !!(await rpc("adm_has_1221", { p_email: email })); } catch {} }
+    if (ok) d1221 = 1100 * (pair ? 2 : 1);
+  }
+  const total = Math.max(0, c0.total - rOff * (pair ? 2 : 1) - pOff - d1221);
   const free = discount > 0;
 
   // 有料ならStripeの決済画面をつくる（STRIPE_SECRET_KEY があるとき）
@@ -153,7 +162,7 @@ module.exports = async (req, res) => {
   if (key) {
     const list = plans.map((p) => `<li>${esc(lab(p))}（${promo && p in promo ? (promo[p] ? yen(promo[p]) : "無料") + "・特別価格" : p === ARCH && gets1127(plans) ? "無料・11/27特典" : PRICES[p] ? yen(student && HALF.includes(p) ? PRICES[p] / 2 : PRICES[p]) : "無料"}）</li>`).join("");
     const early = isEarly() && plans.some((p) => p.startsWith("11/27"));
-    const extra = [promo && plans.some((k) => k in promo) ? "特別価格" : "", rOff ? `紹介割（1人${rOff}円オフ）` : "", pOff ? `ペア割（${pairInviter.name}様とペア・1,500円オフ）` : "", free ? (fullPass ? "紹介特典（通し券 無料）" : "紹介特典（11/27 講演会 無料）") : "", early ? "早割（11/27 1人1,000円オフ）" : "", student ? "学生半額" : "", pair_student ? "同伴者 学生半額" : "", pair ? "ペア割（1人1,500円オフ）" : ""].filter(Boolean).join("／");
+    const extra = [promo && plans.some((k) => k in promo) ? "特別価格" : "", rOff ? `紹介割（1人${rOff}円オフ）` : "", pOff ? `ペア割（${pairInviter.name}様とペア・1,500円オフ）` : "", d1221 ? "12/21申込特典（11/27アーカイブ1,100円オフ）" : "", free ? (fullPass ? "紹介特典（通し券 無料）" : "紹介特典（11/27 講演会 無料）") : "", early ? "早割（11/27 1人1,000円オフ）" : "", student ? "学生半額" : "", pair_student ? "同伴者 学生半額" : "", pair ? "ペア割（1人1,500円オフ）" : ""].filter(Boolean).join("／");
     const body = `<div style="font-family:sans-serif;line-height:1.9;color:#2a2f3a;max-width:560px">
 <p>${esc(name)} 様</p>
 <p>「2027年をどう生きるか ─ 村主悠真 × つっちー」にお申し込みいただき、ありがとうございます。<br>以下の内容で受け付けました。</p>
