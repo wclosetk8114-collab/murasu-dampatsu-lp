@@ -3,7 +3,7 @@ const { rpc, sendMail, remaining, SITE } = require("./_lib");
 const n = (rows, plan, k = "confirmed") => ((rows.find((r) => r.plan === plan) || {})[k]) || 0;
 const yen = (v) => Number(v).toLocaleString("ja-JP") + "円";
 
-function buildText(s, rem) {
+function buildText(s, rem, real) {
   const r = s.plans || [];
   const pv = n(r, "冬の通し券（会場）"), plv = n(r, "冬の通し券 ライト（会場）"), plo = n(r, "冬の通し券 ライト（オンライン）");
   const npass = n(r, "冬の通し券（会場）", "new24") + n(r, "冬の通し券 ライト（会場）", "new24") + n(r, "冬の通し券 ライト（オンライン）", "new24");
@@ -11,7 +11,7 @@ function buildText(s, rem) {
   const kyV = n(r, "12/21 虚点") + pv + plv, kyO = n(r, "12/21 虚点（オンライン）") + plo;
   const new1127 = n(r, "11/27 講演会＋懇親会セット", "new24") + n(r, "11/27 講演会", "new24") + n(r, "11/27 講演会（オンライン）", "new24") + npass;
   const new1221 = n(r, "12/21 虚点", "new24") + n(r, "12/21 虚点（オンライン）", "new24") + npass;
-  const unpaid = r.reduce((a, x) => a + (x.unpaid || 0), 0);
+  const unpaid = (real || []).length;
   const d = new Date(Date.now() + 9 * 3600e3);
   const lines = [
     `【申し込み状況】${d.getUTCMonth() + 1}/${d.getUTCDate()} 朝の報告`,
@@ -34,7 +34,7 @@ function buildText(s, rem) {
     `■ 11/4 対談アーカイブ販売　${n(r, "11/4 対談アーカイブ")}名（前日比 +${n(r, "11/4 対談アーカイブ", "new24")}）`,
     ``,
     `売上（返金を引いた額）：${yen(s.revenue || 0)}`,
-    unpaid ? `※ 決済が済んでいない人：${unpaid}名` : ``,
+    unpaid ? `※ 決済が済んでいない人：${unpaid}名（${real.map((x) => String(x.name).replace(/[\s　]/g, "")).join("、")}）` : `※ 決済が済んでいない人：0名`,
     ``,
     SITE,
   ];
@@ -48,7 +48,9 @@ module.exports = async (req, res) => {
   if (!okCron && !okKey) return res.status(401).json({ error: "auth" });
   const s = await rpc("adm_daily_summary", {});
   const rem = await remaining();
-  const text = buildText(s, rem);
+  let real = [];
+  try { real = (await rpc("adm_real_unpaid", {})) || []; } catch {}
+  const text = buildText(s, rem, real);
   const token = process.env.LINE_CHANNEL_ACCESS_TOKEN, to = process.env.LINE_USER_ID;
   let via = "none";
   if (token && to) {
