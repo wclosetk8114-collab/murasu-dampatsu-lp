@@ -31,7 +31,7 @@ const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&l
 const yen = (n) => n.toLocaleString("ja-JP") + "円";
 
 // 11/27（講演会・セット・通し券）を申し込んだ人は、11/4アーカイブが無料でついてくる
-const gets1127 = (plans) => plans.some((k) => k.startsWith("11/27") || PASSES.includes(k));
+const gets1127 = (plans) => plans.some((k) => k.startsWith("11/27") || k.startsWith("12/21") || PASSES.includes(k));
 // 特別価格リンク（?p=コード）：対象プランだけ1人あたりの固定価格にする（学生割・ペア割・早割はかからない）
 const PROMOS = { "tc27free": { "11/27 講演会": 0, "11/27 講演会＋懇親会セット": 5000 }, "tc27invite": { "11/27 講演会": 0, "11/27 講演会＋懇親会セット": 0 } };
 function calc(allPlans, pair, stu, pstu, referred, promo) {
@@ -160,7 +160,7 @@ module.exports = async (req, res) => {
   const key = (process.env.RESEND_API_KEY || process.env.resend);
   let mailed = false;
   if (key) {
-    const list = plans.map((p) => `<li>${esc(lab(p))}（${promo && p in promo ? (promo[p] ? yen(promo[p]) : "無料") + "・特別価格" : p === ARCH && gets1127(plans) ? "無料・11/27特典" : PRICES[p] ? yen(student && HALF.includes(p) ? PRICES[p] / 2 : PRICES[p]) : "無料"}）</li>`).join("");
+    const list = plans.map((p) => `<li>${esc(lab(p))}（${promo && p in promo ? (promo[p] ? yen(promo[p]) : "無料") + "・特別価格" : p === ARCH && gets1127(plans) ? "無料・特典" : PRICES[p] ? yen(student && HALF.includes(p) ? PRICES[p] / 2 : PRICES[p]) : "無料"}）</li>`).join("");
     const early = isEarly() && plans.some((p) => p.startsWith("11/27"));
     const extra = [promo && plans.some((k) => k in promo) ? "特別価格" : "", rOff ? `紹介割（1人${rOff}円オフ）` : "", pOff ? `ペア割（${pairInviter.name}様とペア・1,500円オフ）` : "", d1221 ? "12/21申込特典（11/27アーカイブ1,100円オフ）" : "", free ? (fullPass ? "紹介特典（通し券 無料）" : "紹介特典（11/27 講演会 無料）") : "", early ? "早割（11/27 1人1,000円オフ）" : "", student ? "学生半額" : "", pair_student ? "同伴者 学生半額" : "", pair ? "ペア割（1人1,500円オフ）" : ""].filter(Boolean).join("／");
     const body = `<div style="font-family:sans-serif;line-height:1.9;color:#2a2f3a;max-width:560px">
@@ -178,7 +178,7 @@ ${pair ? `<b>一緒に参加する方</b><br>${esc(pair_name)} 様<br><br>` : ""
 ${referrer ? `<b>紹介者</b><br>${esc(referrer)}<br><br>` : ""}
 <b>合計</b>：${yen(total)}${pair ? "（2人分）" : ""}${extra ? `<br><small>${extra} 適用</small>` : ""}
 </div>
-${plans.includes(ARCH) || gets1127(plans) ? `<p><b>11/4 対談アーカイブについて</b><br>${gets1127(plans) ? "11/27にお申し込みの方には、11/4対談のアーカイブを無料でプレゼントしています。" : ""}お支払いを確認したあと、アーカイブのURLをメールでお送りします。</p>` : ""}${plans.some((p) => p.includes("アーカイブのみ")) ? `<p><b>アーカイブについて</b><br>イベント終了後、アーカイブの準備ができしだい、視聴URLをメールでお送りします。</p>` : ""}${plans.some((p) => (p.startsWith("11/27") && !p.includes("オンライン") && !p.includes("アーカイブ")) || p === "冬の通し券（会場）" || p === "冬の通し券 ライト（会場）") ? `<div style="border:1px solid #d8cdb6;padding:14px 18px;margin:14px 0"><b>11/27（金）の会場</b><br>秋葉原加藤ビル<br>〒101-0025 東京都千代田区神田佐久間町2-15<br><a href="https://maps.google.com/maps?q=35.6983505,139.7761308&zoom=16">Googleマップで見る</a></div>` : ""}<p>（11/27は18:00〜21:30、12/21は18:00〜21:00。12/21の会場の詳細は、あらためてご連絡します）</p>
+${plans.includes(ARCH) || gets1127(plans) ? `<p><b>11/4 対談アーカイブについて</b><br>${gets1127(plans) ? "12/21（または11/27）にお申し込みの方には、11/4対談のアーカイブを無料でプレゼントしています。" : ""}お支払いを確認したあと、アーカイブのURLをメールでお送りします。</p>` : ""}${plans.some((p) => p.includes("アーカイブのみ")) ? `<p><b>アーカイブについて</b><br>イベント終了後、アーカイブの準備ができしだい、視聴URLをメールでお送りします。</p>` : ""}${plans.some((p) => (p.startsWith("11/27") && !p.includes("オンライン") && !p.includes("アーカイブ")) || p === "冬の通し券（会場）" || p === "冬の通し券 ライト（会場）") ? `<div style="border:1px solid #d8cdb6;padding:14px 18px;margin:14px 0"><b>11/27（金）の会場</b><br>秋葉原加藤ビル<br>〒101-0025 東京都千代田区神田佐久間町2-15<br><a href="https://maps.google.com/maps?q=35.6983505,139.7761308&zoom=16">Googleマップで見る</a></div>` : ""}<p>（11/27は18:00〜21:30、12/21は18:00〜21:00。12/21の会場の詳細は、あらためてご連絡します）</p>
 ${plans.includes("11/4 オンライン対談") ? `<div style="border:2px solid #2d8cff;background:#f2f8ff;padding:16px 20px;margin:16px 0">
 <b>11/4（水）20:00〜 オンライン対談の参加URL（Zoom）</b><br>
 当日はこちらから入室してください。<br>
