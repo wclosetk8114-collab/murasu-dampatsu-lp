@@ -107,7 +107,7 @@ module.exports = async (req, res) => {
   if (plans.filter((p) => p.startsWith("11/27")).length > 1) return res.status(400).json({ error: "input" });
   if (plans.filter((p) => p.startsWith("12/21")).length > 1) return res.status(400).json({ error: "input" });
   const student = !!b.student, pair_student = pair && !!b.pair_student;
-  // 定員チェック（セット30名・虚点会場20名）
+  // 定員チェック（セット30名・虚点会場25名）
   const need = pair ? 2 : 1;
   try {
     const rem = await remaining();

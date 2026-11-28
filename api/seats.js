@@ -1,4 +1,4 @@
-// 残り枠（セット30名・虚点会場20名）
+// 残り枠（セット30名・虚点会場25名）
 const { remaining } = require("./_lib");
 module.exports = async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
